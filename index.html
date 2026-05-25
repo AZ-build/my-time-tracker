@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Dayline" />
+  <title>Dayline</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg:       #0d0f14;
+      --surface:  #161820;
+      --surface2: #1d1f2a;
+      --border:   rgba(255,255,255,0.07);
+      --text:     #f0f0f8;
+      --text2:    #8888aa;
+      --text3:    #44445a;
+      --accent:   #f97316;
+      --nav-h:    80px;
+      --r:        16px;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif; overflow: hidden; }
+
+    #app { position: relative; max-width: 430px; margin: 0 auto; height: 100dvh; overflow: hidden; }
+
+    /* ─── Screens ───────────────────────── */
+    .screen { position: absolute; inset: 0; bottom: var(--nav-h); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-top: env(safe-area-inset-top, 44px); padding-bottom: 16px; opacity: 0; pointer-events: none; transform: translateY(6px); transition: opacity 0.22s, transform 0.22s; }
+    .screen.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+
+    /* NOW screen flex layout */
+    #s-now { display: flex; flex-direction: column; overflow-y: auto !important; }
+
+    /* ─── Nav ───────────────────────────── */
+    #nav { position: absolute; bottom: 0; left: 0; right: 0; height: var(--nav-h); background: rgba(13,15,20,0.96); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-top: 1px solid var(--border); display: flex; align-items: flex-start; padding-top: 10px; padding-bottom: env(safe-area-inset-bottom, 20px); }
+    .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; user-select: none; }
+    .nav-btn svg  { color: var(--text3); transition: color 0.18s; }
+    .nav-btn span { font-size: 10px; font-weight: 500; color: var(--text3); transition: color 0.18s; }
+    .nav-btn.active svg  { color: var(--accent); }
+    .nav-btn.active span { color: var(--accent); }
+
+    /* ══════════════════════════════════════
+       NOW HERO
+    ══════════════════════════════════════ */
+    .now-hero {
+      flex: 1; min-height: 200px; max-height: 330px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 10px 20px 6px;
+      position: relative; transition: background 0.5s;
+    }
+
+    .now-icon {
+      margin-bottom: 8px;
+      filter: drop-shadow(0 0 18px var(--act-color, #f97316));
+      transition: filter 0.4s, color 0.3s;
+      color: var(--act-color, #f97316);
+      line-height: 1;
+    }
+    .now-icon svg { width: 48px; height: 48px; display: block; }
+
+    .now-act-name {
+      font-size: 26px; font-weight: 700; letter-spacing: -0.4px;
+      display: flex; align-items: center; gap: 8px; margin-bottom: 2px;
+    }
+    .pulse-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--act-color, #f97316); flex-shrink: 0; animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 var(--act-glow, rgba(249,115,22,0.5)); } 60% { box-shadow: 0 0 0 8px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+
+    .now-category { font-size: 10px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; color: var(--act-color, #f97316); opacity: 0.8; margin-bottom: 8px; }
+
+    .timer-big { font-size: 86px; font-weight: 100; letter-spacing: -3px; color: var(--act-color, #f97316); line-height: 1; font-variant-numeric: tabular-nums; transition: color 0.4s; }
+    .timer-big .tu { font-size: 34px; font-weight: 300; letter-spacing: 0; margin-left: 2px; }
+    .now-started { font-size: 12px; color: var(--text2); margin-top: 5px; }
+
+    /* Stop button */
+    .stop-btn {
+      margin-top: 10px;
+      padding: 7px 22px;
+      background: rgba(248,113,113,0.12);
+      border: 1.5px solid rgba(248,113,113,0.28);
+      border-radius: 20px;
+      color: #f87171;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      letter-spacing: 0.2px;
+      transition: background 0.15s;
+    }
+    .stop-btn:active { background: rgba(248,113,113,0.22); }
+
+    /* Loading ring */
+    .loading-ring {
+      width: 44px; height: 44px;
+      border: 3px solid rgba(255,255,255,0.08);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ══════════════════════════════════════
+       MULTI-DAY BARS
+    ══════════════════════════════════════ */
+    .multi-day-section { flex-shrink: 0; padding: 10px 20px 0; }
+
+    .day-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+
+    .day-row-label {
+      width: 36px; font-size: 9px; font-weight: 600;
+      color: var(--text3); text-align: right;
+      flex-shrink: 0; letter-spacing: 0.2px;
+    }
+    .day-row.is-today .day-row-label { color: var(--text2); font-weight: 700; }
+
+    .day-row-bar-wrap { flex: 1; position: relative; }
+
+    .day-row-bar {
+      display: flex; height: 14px; border-radius: 5px; overflow: hidden;
+      background: var(--surface2);
+    }
+    .day-row.is-today .day-row-bar { height: 32px; border-radius: 8px; }
+
+    .day-seg { height: 100%; flex-shrink: 0; }
+
+    /* Hatched gap for past untracked */
+    .day-seg.gap-past {
+      background: repeating-linear-gradient(90deg, #2a2a3a 0, #2a2a3a 3px, transparent 3px, transparent 8px) !important;
+    }
+
+    /* Now tick on today's bar */
+    .now-tick {
+      position: absolute; top: -3px; bottom: -3px; width: 2px;
+      background: rgba(255,255,255,0.85); border-radius: 1px; pointer-events: none;
+    }
+    .now-tick::after { content: '▲'; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); font-size: 6px; color: rgba(255,255,255,0.5); }
+
+    .day-row-hrs { width: 28px; font-size: 8px; color: var(--text3); text-align: left; flex-shrink: 0; white-space: nowrap; }
+    .day-row.is-today .day-row-hrs { color: var(--text2); font-size: 9px; }
+
+    .day-axis { display: flex; justify-content: space-between; padding: 5px 44px 0; font-size: 8px; color: var(--text3); }
+
+    /* Gap CTA */
+    .gap-cta { display: flex; align-items: center; gap: 8px; margin: 10px 20px 0; padding: 9px 14px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.22); border-radius: 10px; cursor: pointer; transition: background 0.15s; }
+    .gap-cta:active { background: rgba(245,158,11,0.18); }
+    .gap-cta-text { font-size: 12px; color: #f59e0b; flex: 1; }
+    .gap-cta-btn  { font-size: 11px; font-weight: 700; color: #f59e0b; white-space: nowrap; }
+
+    /* ══════════════════════════════════════
+       SWITCH SECTION (thumb zone)
+    ══════════════════════════════════════ */
+    .switch-section { flex-shrink: 0; padding: 12px 20px calc(env(safe-area-inset-bottom, 0px) + 10px); }
+    .switch-label { font-size: 10px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; }
+
+    /* 4-col activity grid */
+    .act-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .act-card {
+      border-radius: 14px; padding: 12px 4px 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 7px;
+      cursor: pointer; border: 1.5px solid transparent;
+      transition: transform 0.12s, border-color 0.2s;
+      user-select: none; position: relative;
+    }
+    .act-card:active { transform: scale(0.91); }
+    .act-card.is-active { border-color: rgba(255,255,255,0.4); }
+    .act-card.has-sub .act-chev { position: absolute; bottom: 5px; right: 6px; font-size: 8px; color: rgba(255,255,255,0.35); transition: transform 0.2s; }
+    .act-card.expanded .act-chev { transform: rotate(180deg); }
+
+    .act-icon { line-height: 1; }
+    .act-icon svg { width: 36px; height: 36px; display: block; }
+    .act-name { font-size: 9px; font-weight: 500; color: rgba(255,255,255,0.7); text-align: center; line-height: 1.2; }
+
+    /* Sub-rows (Chores & Me Time) */
+    .sub-row { overflow: hidden; max-height: 0; transition: max-height 0.28s ease; }
+    .sub-row.open { max-height: 160px; }
+    .sub-row-inner { padding-top: 8px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .sub-card { border-radius: 12px; padding: 9px 4px 8px; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; border: 1.5px solid transparent; transition: transform 0.12s, border-color 0.18s; user-select: none; }
+    .sub-card:active { transform: scale(0.91); }
+    .sub-card.is-active { border-color: rgba(255,255,255,0.4); }
+    .sub-icon { font-size: 20px; line-height: 1; }
+    .sub-name { font-size: 8px; font-weight: 500; color: rgba(255,255,255,0.65); text-align: center; line-height: 1.2; }
+    .add-sub-btn { border-radius: 12px; padding: 9px 4px 8px; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; background: transparent; border: 1.5px dashed rgba(255,255,255,0.13); transition: background 0.15s; }
+    .add-sub-btn:active { background: rgba(255,255,255,0.06); }
+
+    /* ══════════════════════════════════════
+       TIMELINE SCREEN
+    ══════════════════════════════════════ */
+    .tl-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px 16px; }
+    .tl-title  { font-size: 28px; font-weight: 700; }
+    .date-nav { display: flex; align-items: center; justify-content: space-between; padding: 0 20px 16px; }
+    .date-nav-lbl { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+    .nav-arrows { display: flex; gap: 8px; }
+    .nav-arrow  { width: 32px; height: 32px; background: var(--surface); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; color: var(--text2); }
+    .tl-rows    { padding: 0 20px; }
+    .tl-row     { display: flex; align-items: stretch; gap: 10px; margin-bottom: 5px; cursor: pointer; }
+    .tl-row:active .tl-block { opacity: 0.8; }
+    .tl-time-lbl { width: 44px; font-size: 10px; color: var(--text3); padding-top: 13px; flex-shrink: 0; text-align: right; }
+    .tl-block    { flex: 1; border-radius: 12px; padding: 11px 14px; display: flex; align-items: center; justify-content: space-between; transition: opacity 0.15s; }
+    .tl-block-left { display: flex; align-items: center; gap: 10px; }
+    .tl-block-icon svg { width: 18px; height: 18px; display: block; }
+    .tl-block-name { font-size: 14px; font-weight: 600; color: #fff; }
+    .tl-block-dur  { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.6); white-space: nowrap; }
+    .tl-gap        { background: var(--surface); cursor: pointer; }
+    .tl-gap .tl-block-name { color: #f59e0b; font-weight: 500; font-size: 13px; }
+    .tl-gap .tl-block-dur  { color: var(--text3); }
+    .tl-gap-add    { font-size: 11px; font-weight: 700; color: #f59e0b; white-space: nowrap; }
+    .mini-tl-wrap   { padding: 16px 20px 6px; }
+    .mini-tl-bar    { height: 30px; border-radius: 10px; overflow: hidden; display: flex; }
+    .mini-tl-seg    { height: 100%; }
+    .mini-tl-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text3); margin-top: 5px; }
+    .cat-summary    { display: flex; border-top: 1px solid var(--border); margin: 10px 0 0; padding: 14px 20px 0; }
+    .cat-sum-item   { flex: 1; text-align: center; }
+    .cat-sum-name   { font-size: 11px; font-weight: 700; margin-bottom: 3px; }
+    .cat-sum-time   { font-size: 15px; font-weight: 700; }
+    .cat-sum-pct    { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+    /* ══════════════════════════════════════
+       INSIGHTS
+    ══════════════════════════════════════ */
+    .ins-header  { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px 16px; }
+    .ins-title   { font-size: 28px; font-weight: 700; }
+    .week-nav    { display: flex; align-items: center; justify-content: space-between; padding: 0 20px 20px; }
+    .week-range  { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+    .sec-title   { font-size: 16px; font-weight: 700; padding: 0 20px 14px; }
+    .cat-bars    { padding: 0 20px 24px; }
+    .cat-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .cat-bar-ico { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .cat-bar-ico svg { width: 22px; height: 22px; display: block; }
+    .cat-bar-info  { flex: 1; }
+    .cat-bar-meta  { display: flex; justify-content: space-between; margin-bottom: 7px; }
+    .cat-bar-name  { font-size: 14px; font-weight: 600; }
+    .cat-bar-hours { font-size: 13px; color: var(--text2); }
+    .cat-bar-track { height: 5px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+    .cat-bar-fill  { height: 100%; border-radius: 4px; }
+    .stat-grid     { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 20px 24px; }
+    .stat-card     { background: var(--surface); border-radius: var(--r); padding: 16px; }
+    .stat-card-lbl { font-size: 11px; color: var(--text2); margin-bottom: 8px; }
+    .stat-card-val { font-size: 24px; font-weight: 700; line-height: 1; }
+    .stat-chg      { font-size: 11px; margin-top: 5px; color: var(--text3); }
+    .empty-state   { text-align: center; color: var(--text3); font-size: 14px; padding: 30px 20px; line-height: 1.6; }
+
+    /* ── MORE ──────────────────────────── */
+    .more-header { padding: 12px 20px 20px; }
+    .more-title  { font-size: 28px; font-weight: 700; }
+    .more-rows   { padding: 0 20px; }
+    .more-row    { display: flex; align-items: center; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .more-ico    { width: 38px; height: 38px; border-radius: 11px; background: var(--surface2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .more-ico svg { width: 20px; height: 20px; }
+    .more-lbl    { font-size: 15px; font-weight: 500; flex: 1; }
+    .more-chev   { color: var(--text3); font-size: 20px; }
+
+    /* ══════════════════════════════════════
+       EDIT / ADD SHEET
+    ══════════════════════════════════════ */
+    .overlay { position: fixed; inset: 0; z-index: 300; display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+    .overlay.open { opacity: 1; pointer-events: all; }
+    .overlay-bg { position: absolute; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
+    .sheet-panel { position: relative; width: 100%; max-width: 430px; margin: 0 auto; background: #181b25; border-radius: 24px 24px 0 0; padding: 0 20px calc(env(safe-area-inset-bottom, 16px) + 20px); transform: translateY(100%); transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1); max-height: 90dvh; overflow-y: auto; }
+    .overlay.open .sheet-panel { transform: translateY(0); }
+    .sheet-handle { width: 36px; height: 4px; background: rgba(255,255,255,0.18); border-radius: 2px; margin: 14px auto 18px; }
+    .sheet-title  { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 20px; }
+    .sheet-cat-label { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; }
+    .sheet-cat-grid  { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+    .sheet-cat-card  { border-radius: 12px; padding: 10px 4px 9px; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; border: 1.5px solid transparent; background: var(--surface2); transition: transform 0.1s, border-color 0.15s; user-select: none; }
+    .sheet-cat-card:active { transform: scale(0.91); }
+    .sheet-cat-card.selected { border-color: rgba(255,255,255,0.45); }
+    .scc-icon svg { width: 22px; height: 22px; display: block; }
+    .scc-name { font-size: 9px; font-weight: 500; color: rgba(255,255,255,0.7); text-align: center; line-height: 1.2; }
+
+    /* Datetime inputs — stacked vertically */
+    .sheet-times { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+    .time-field label { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); display: block; margin-bottom: 8px; }
+    .datetime-input {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 11px 12px; font-size: 15px; font-weight: 600;
+      color: var(--text); -webkit-appearance: none; appearance: none; font-family: inherit;
+      color-scheme: dark;
+    }
+    .datetime-input:focus { outline: none; border-color: rgba(249,115,22,0.5); }
+    .datetime-input:disabled { opacity: 0.4; }
+
+    .sheet-error { font-size: 12px; color: #f87171; text-align: center; margin-bottom: 10px; min-height: 16px; }
+    .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .sheet-btn { height: 48px; border-radius: 12px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; font-family: inherit; }
+    .sheet-btn:active { opacity: 0.8; }
+    .sheet-btn.cancel { background: var(--surface2); color: var(--text2); }
+    .sheet-btn.save   { background: var(--accent); color: white; }
+    .sheet-delete { width: 100%; padding: 12px; margin-bottom: 14px; background: transparent; border: 1px solid rgba(248,113,113,0.3); border-radius: 12px; font-size: 14px; font-weight: 600; color: #f87171; cursor: pointer; transition: background 0.15s; font-family: inherit; }
+    .sheet-delete:active { background: rgba(248,113,113,0.1); }
+
+    /* ── Toast ─────────────────────────── */
+    #toast { position: fixed; bottom: calc(var(--nav-h) + 16px); left: 50%; transform: translateX(-50%) translateY(16px); background: rgba(24,27,37,0.97); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 22px; padding: 10px 22px; font-size: 13px; font-weight: 500; white-space: nowrap; opacity: 0; transition: opacity 0.22s, transform 0.22s; pointer-events: none; z-index: 500; }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Firebase config banner ─────────── */
+    #configBanner {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      background: var(--bg); flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 30px; text-align: center;
+    }
+    #configBanner .cb-emoji { font-size: 52px; margin-bottom: 18px; }
+    #configBanner .cb-title { font-size: 20px; font-weight: 700; margin-bottom: 14px; }
+    #configBanner .cb-body  { font-size: 13px; color: var(--text2); line-height: 1.7; max-width: 320px; }
+    #configBanner code { color: var(--accent); font-family: monospace; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Firebase config banner (shown when API key not yet filled in) -->
+  <div id="configBanner">
+    <div class="cb-emoji">🔥</div>
+    <div class="cb-title">Firebase Setup Required</div>
+    <div class="cb-body">
+      Open <code>index.html</code> in a text editor and fill in your Firebase config values near the top of the <code>&lt;script&gt;</code> section.<br><br>
+      Find them at:<br>
+      <strong style="color:var(--text);">Firebase Console → Project Settings → Your apps → SDK setup and config</strong><br><br>
+      Also make sure <strong style="color:var(--text);">Firestore Database</strong> is enabled (Build → Firestore Database → Create database → Start in test mode).
+    </div>
+  </div>
+
+  <!-- ═══ NOW ═══════════════════════════ -->
+  <div class="screen active" id="s-now">
+    <div class="now-hero" id="nowHero">
+      <div class="now-icon" id="nowIcon"></div>
+      <div class="now-act-name"><span id="nowName"></span><span class="pulse-dot" id="pulseDot" style="display:none;"></span></div>
+      <div class="now-category" id="nowCategory"></div>
+      <div class="timer-big" id="timerDisplay"></div>
+      <div class="now-started" id="startedAtRow" style="display:none;">Started at <span id="startedAt">—</span></div>
+      <button class="stop-btn" id="stopBtn" onclick="stopTracking()" style="display:none;">⏹ Stop Tracking</button>
+    </div>
+
+    <div class="multi-day-section" id="multiDaySection"></div>
+    <div class="gap-cta" id="gapCta" style="display:none;"></div>
+
+    <div class="switch-section">
+      <div class="switch-label" id="switchLabel">Start tracking</div>
+      <div class="act-grid" id="quickGrid"></div>
+
+      <!-- Chores sub-row -->
+      <div class="sub-row" id="choresSub">
+        <div class="sub-row-inner" id="choresSubGrid"></div>
+      </div>
+
+      <!-- Me Time sub-row -->
+      <div class="sub-row" id="meTimeSub">
+        <div class="sub-row-inner" id="meTimeSubGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TIMELINE ══════════════════════ -->
+  <div class="screen" id="s-timeline">
+    <div class="tl-header">
+      <div class="tl-title">Timeline</div>
+    </div>
+    <div class="date-nav">
+      <div class="date-nav-lbl" id="tlDateLabel">Today
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="nav-arrows">
+        <div class="nav-arrow" onclick="tlNavPrev()">‹</div>
+        <div class="nav-arrow" onclick="tlNavNext()">›</div>
+      </div>
+    </div>
+    <div class="tl-rows" id="tlRows"></div>
+    <div class="mini-tl-wrap">
+      <div class="mini-tl-bar" id="miniBar"></div>
+      <div class="mini-tl-labels"><span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>12 AM</span></div>
+    </div>
+    <div class="cat-summary" id="catSummary"></div>
+  </div>
+
+  <!-- ═══ INSIGHTS ══════════════════════ -->
+  <div class="screen" id="s-insights">
+    <div class="ins-header"><div class="ins-title">Insights</div></div>
+    <div class="week-nav">
+      <div class="week-range" id="insWeekRange">This week
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="nav-arrows">
+        <div class="nav-arrow" onclick="insNavPrev()">‹</div>
+        <div class="nav-arrow" onclick="insNavNext()">›</div>
+      </div>
+    </div>
+    <div class="sec-title">Time by category</div>
+    <div class="cat-bars" id="catBars"></div>
+    <div class="stat-grid" id="statGrid"></div>
+  </div>
+
+  <!-- ═══ MORE ══════════════════════════ -->
+  <div class="screen" id="s-more">
+    <div class="more-header"><div class="more-title">More</div></div>
+    <div class="more-rows" id="moreRows"></div>
+  </div>
+
+  <!-- ─── Nav ─────────────────────────── -->
+  <nav id="nav">
+    <div class="nav-btn active" data-tab="now" onclick="goTab('now')">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Now</span>
+    </div>
+    <div class="nav-btn" data-tab="timeline" onclick="goTab('timeline')">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="3.5" rx="1"/><rect x="3" y="10.25" width="18" height="3.5" rx="1"/><rect x="3" y="16.5" width="18" height="3.5" rx="1"/></svg><span>Timeline</span>
+    </div>
+    <div class="nav-btn" data-tab="insights" onclick="goTab('insights')">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Insights</span>
+    </div>
+    <div class="nav-btn" data-tab="more" onclick="goTab('more')">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></svg><span>More</span>
+    </div>
+  </nav>
+
+  <div id="toast"></div>
+
+  <!-- ─── Edit / Add Sheet ─────────────── -->
+  <div class="overlay" id="editOverlay">
+    <div class="overlay-bg" onclick="closeEditSheet()"></div>
+    <div class="sheet-panel">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="sheetTitle">Edit entry</div>
+      <div class="sheet-cat-label">Category</div>
+      <div class="sheet-cat-grid" id="sheetCatGrid"></div>
+      <div class="sheet-cat-label">Time</div>
+      <div class="sheet-times">
+        <div class="time-field">
+          <label>Start</label>
+          <input type="datetime-local" class="datetime-input" id="inputStart" />
+        </div>
+        <div class="time-field" id="endTimeField">
+          <label>End</label>
+          <input type="datetime-local" class="datetime-input" id="inputEnd" />
+        </div>
+      </div>
+      <div class="sheet-error" id="sheetError"></div>
+      <button class="sheet-delete" id="sheetDeleteBtn" onclick="deleteEntrySheet()">Delete this entry</button>
+      <div class="sheet-actions">
+        <button class="sheet-btn cancel" onclick="closeEditSheet()">Cancel</button>
+        <button class="sheet-btn save" onclick="saveEdit()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+// ════════════════════════════════════════════════
+//  FIREBASE CONFIG
+//
+//  ← Fill these in before using the app!
+//
+//  How to find them:
+//    1. Go to console.firebase.google.com
+//    2. Select your project (my-time-tracker-app-ca253)
+//    3. Click the ⚙️ gear → Project Settings
+//    4. Scroll to "Your apps" → click your web app
+//    5. Copy the values from "SDK setup and config"
+//
+//  Also make sure Firestore is enabled:
+//    Firebase Console → Build → Firestore Database → Create database → test mode
+// ════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "AIzaSyAt8xjUabmXVdiHvXLjdM0u5uDlYMqtlzQ",
+  authDomain:        "my-time-tracker-app-ca253.firebaseapp.com",
+  projectId:         "my-time-tracker-app-ca253",
+  storageBucket:     "my-time-tracker-app-ca253.firebasestorage.app",
+  messagingSenderId: "679955767596",
+  appId:             "1:679955767596:web:0ea0fb0317627fc82f0c89",
+  measurementId:     "G-B13RCJ8WK3",
+};
+
+// ── Detect unconfigured state ─────────────────
+const CONFIGURED = !firebaseConfig.apiKey.startsWith('PASTE');
+if (!CONFIGURED) {
+  document.getElementById('configBanner').style.display = 'flex';
+}
+
+// ── Init Firebase ─────────────────────────────
+let db = null;
+if (CONFIGURED) {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+}
+
+// ════════════════════════════════════════════════
+//  SVG ICON PATHS  (stroke="currentColor")
+// ════════════════════════════════════════════════
+const SVG_PATHS = {
+  sleep:   `<path d="M14.8 3.2a7.8 7.8 0 1 0 6 12.4A8.8 8.8 0 1 1 14.8 3.2Z"/><path d="M16.8 6.2v1.8"/><path d="M15.9 7.1h1.8"/><path d="M19.5 8.8v1.2"/><path d="M18.9 9.4h1.2"/>`,
+  cook:    `<path d="M5 10h10a3 3 0 0 1 3 3v3H8a3 3 0 0 1-3-3v-3Z"/><path d="M4 10h15"/><path d="M18 12h1a2 2 0 0 1 0 4h-1"/><path d="M8 10a4 4 0 0 1 8 0"/><path d="M9 5.5c0-.8.5-1.5 1.2-1.9"/><path d="M12 5c0-.9.6-1.7 1.5-2"/>`,
+  eat:     `<path d="M6 3v7"/><path d="M4 3v4"/><path d="M8 3v4"/><path d="M4 7h4"/><path d="M6 10v11"/><path d="M15 3c1.7 0 3 1.7 3 4v14"/><path d="M15 3v18"/><path d="M15 11h3"/>`,
+  kids:    `<circle cx="9" cy="8" r="2.5"/><circle cx="15.5" cy="9" r="2"/><path d="M4.5 18a4.5 4.5 0 0 1 9 0"/><path d="M12.5 18a3.5 3.5 0 0 1 7 0"/>`,
+  chores:  `<path d="M4 17h10"/><path d="M13.5 6.5 6 14v3h3l7.5-7.5"/><path d="M12 5l2-2 4 4-2 2"/><path d="M18.5 13.5v2"/><path d="M17.5 14.5h2"/><path d="M20.5 9.5v1.2"/><path d="M19.9 10.1h1.2"/>`,
+  errands: `<path d="M12 21s6-5.3 6-10a6 6 0 1 0-12 0c0 4.7 6 10 6 10Z"/><path d="m10.5 11.5 1.2 1.2 2.8-3"/>`,
+  work:    `<rect x="3" y="7" width="18" height="12" rx="2.5"/><path d="M9 7V5.8A1.8 1.8 0 0 1 10.8 4h2.4A1.8 1.8 0 0 1 15 5.8V7"/><path d="M3 11.5h18"/><path d="M10.5 11.5v2h3v-2"/>`,
+  metime:  `<circle cx="10" cy="10" r="4.5"/><path d="M7.8 9.4c.5-.8 1.3-1.4 2.2-1.4s1.7.6 2.2 1.4"/><path d="M8.5 12.1c.4.6 1 .9 1.5.9s1.1-.3 1.5-.9"/><path d="M17.6 5.5v2.2"/><path d="M16.5 6.6h2.2"/><path d="M15.5 16.5c.8.8 1.9 1.3 3 1.3"/><path d="M18.8 15.6c-.1 1.1.3 2.1 1.1 3"/>`,
+};
+
+function icon(id, size) {
+  const p = SVG_PATHS[id] || SVG_PATHS.work;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+}
+
+// ════════════════════════════════════════════════
+//  ACTIVITIES
+// ════════════════════════════════════════════════
+const ACTS = [
+  { id:'sleep',   name:'Sleep',    iconId:'sleep',   color:'#a855f7', bg:'rgba(168,85,247,0.22)', category:'Health'  },
+  { id:'cook',    name:'Cook',     iconId:'cook',    color:'#ef4444', bg:'rgba(239,68,68,0.22)',  category:'House'   },
+  { id:'eat',     name:'Eat',      iconId:'eat',     color:'#f59e0b', bg:'rgba(245,158,11,0.22)', category:'Food'    },
+  { id:'kids',    name:'Kids',     iconId:'kids',    color:'#ec4899', bg:'rgba(236,72,153,0.22)', category:'Family'  },
+  { id:'chores',  name:'Chores',   iconId:'chores',  color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House',  hasSub:true, subKey:'chores'  },
+  { id:'errands', name:'Errands',  iconId:'errands', color:'#3b82f6', bg:'rgba(59,130,246,0.22)', category:'Errands' },
+  { id:'work',    name:'Work',     iconId:'work',    color:'#f97316', bg:'rgba(249,115,22,0.22)', category:'Work'    },
+  { id:'metime',  name:'Me Time',  iconId:'metime',  color:'#06b6d4', bg:'rgba(6,182,212,0.22)',  category:'Self',   hasSub:true, subKey:'metime'  },
+];
+
+let CHORES = [
+  { id:'dishes',  name:'Dishes',         emoji:'🧽', color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House' },
+  { id:'plants',  name:'Water Plants',   emoji:'🪴', color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House' },
+  { id:'mow',     name:'Mow Lawn',       emoji:'🌿', color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House' },
+  { id:'trash',   name:'Take Out Trash', emoji:'🗑️', color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House' },
+];
+
+let METIME_SUBS = [
+  { id:'watchsports',  name:'Watch Sports',     emoji:'⚽', color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' },
+  { id:'projects',     name:'Work on Projects', emoji:'🛠️', color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' },
+  { id:'meetfriends',  name:'Meet Friends',     emoji:'🤝', color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' },
+];
+
+function allActivities() {
+  return [...ACTS.filter(a => !a.hasSub), ...CHORES, ...METIME_SUBS];
+}
+
+function findAct(id) {
+  return ACTS.find(a => a.id === id)
+      || CHORES.find(c => c.id === id)
+      || METIME_SUBS.find(m => m.id === id)
+      || null;
+}
+
+// ════════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════════
+function hexToRgba(hex, a) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+// Format a Date as "9:14 AM"
+function fmtTime(d) {
+  let h = d.getHours(), m = d.getMinutes();
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${String(m).padStart(2,'0')} ${ap}`;
+}
+
+// Format a Date as "Mon May 25"
+function fmtDate(d) {
+  const days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()}`;
+}
+
+function minsToDur(m) {
+  if (m <= 0) return '0m';
+  const h = Math.floor(m / 60), mm = m % 60;
+  return h > 0 && mm > 0 ? `${h}h ${mm}m` : h > 0 ? `${h}h` : `${mm}m`;
+}
+
+function minsToAmPm(m) {
+  const h = Math.floor(m / 60) % 24, mm = m % 60;
+  const ap = h >= 12 ? 'PM' : 'AM', hh = h % 12 || 12;
+  return mm === 0 ? `${hh} ${ap}` : `${hh}:${String(mm).padStart(2,'0')} ${ap}`;
+}
+
+// Get midnight (00:00:00.000) of a given date
+function getMidnight(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// How many minutes after midnight is this date?
+function dateToMins(date, midnight) {
+  return Math.max(0, Math.round((date.getTime() - midnight.getTime()) / 60000));
+}
+
+// Convert minutes-from-midnight back to a Date
+function minsToDate(mins, midnight) {
+  return new Date(midnight.getTime() + mins * 60000);
+}
+
+// Current minutes from today's midnight
+function getNowMins() {
+  const now = new Date();
+  return dateToMins(now, getMidnight(now));
+}
+
+// Format a Date for a <input type="datetime-local"> value: "2026-05-25T14:30"
+function dateToInputStr(date) {
+  const pad = n => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+// ════════════════════════════════════════════════
+//  APP STATE
+// ════════════════════════════════════════════════
+let entries      = [];    // all entries from Firestore (sorted by startTime asc)
+let currentEntry = null;  // the one entry with endTime === null (actively tracking)
+let loading      = true;
+let choresOpen   = false;
+let meTimeOpen   = false;
+let editState    = null;
+let viewDate     = new Date();   // date shown in Timeline screen
+let insWeekOff   = 0;            // 0 = this week, -1 = last week, etc.
+
+// ════════════════════════════════════════════════
+//  FIRESTORE OPERATIONS
+// ════════════════════════════════════════════════
+
+// Real-time listener: keeps `entries` and `currentEntry` in sync
+function listenToEntries() {
+  if (!db) return;
+
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  db.collection('entries')
+    .where('startTime', '>=', firebase.firestore.Timestamp.fromDate(sevenDaysAgo))
+    .orderBy('startTime', 'asc')
+    .onSnapshot(snapshot => {
+      entries = snapshot.docs.map(doc => {
+        const d = doc.data();
+        return {
+          id:        doc.id,
+          actId:     d.actId,
+          name:      d.name,
+          color:     d.color,
+          category:  d.category || '',
+          startTime: d.startTime.toDate(),
+          endTime:   d.endTime ? d.endTime.toDate() : null,
+        };
+      });
+      currentEntry = entries.find(e => e.endTime === null) || null;
+      loading = false;
+      renderAll();
+    }, err => {
+      console.error('Firestore error:', err);
+      loading = false;
+      renderAll();
+    });
+}
+
+// Start a new activity (ending the current one if there is one)
+async function startActivity(actId) {
+  if (!db) return;
+  const act = findAct(actId);
+  if (!act) return;
+
+  const now = firebase.firestore.Timestamp.now();
+  const batch = db.batch();
+
+  if (currentEntry) {
+    batch.update(db.collection('entries').doc(currentEntry.id), { endTime: now });
+  }
+
+  const newRef = db.collection('entries').doc();
+  batch.set(newRef, {
+    actId,
+    name:      act.name,
+    color:     act.color,
+    category:  act.category || '',
+    startTime: now,
+    endTime:   null,
+    createdAt: now,
+  });
+
+  await batch.commit();
+}
+
+// Stop the current activity
+async function stopTracking() {
+  if (!db || !currentEntry) return;
+  await db.collection('entries').doc(currentEntry.id).update({
+    endTime: firebase.firestore.Timestamp.now(),
+  });
+  showToast('Tracking stopped');
+}
+
+// Update an existing entry
+async function updateEntry(id, actId, startDate, endDate) {
+  if (!db) return;
+  const act = findAct(actId);
+  await db.collection('entries').doc(id).update({
+    actId,
+    name:      act.name,
+    color:     act.color,
+    category:  act.category || '',
+    startTime: firebase.firestore.Timestamp.fromDate(startDate),
+    endTime:   endDate ? firebase.firestore.Timestamp.fromDate(endDate) : null,
+  });
+}
+
+// Add a brand-new manual entry
+async function addEntry(actId, startDate, endDate) {
+  if (!db) return;
+  const act = findAct(actId);
+  const now = firebase.firestore.Timestamp.now();
+  await db.collection('entries').doc().set({
+    actId,
+    name:      act.name,
+    color:     act.color,
+    category:  act.category || '',
+    startTime: firebase.firestore.Timestamp.fromDate(startDate),
+    endTime:   endDate ? firebase.firestore.Timestamp.fromDate(endDate) : null,
+    createdAt: now,
+  });
+}
+
+// Delete an entry
+async function removeEntry(id) {
+  if (!db) return;
+  await db.collection('entries').doc(id).delete();
+}
+
+// ════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════
+function renderAll() {
+  renderNowHero();
+  renderQuickGrid();
+  renderChoresSub();
+  renderMeTimeSub();
+  renderMultiDayBars();
+  renderTimeline();
+  renderInsights();
+}
+
+function init() {
+  renderMore();
+  if (CONFIGURED) {
+    listenToEntries();
+  } else {
+    loading = false;
+    renderAll();
+  }
+  setInterval(() => { if (currentEntry) tick(); }, 1000);
+  setInterval(renderMultiDayBars, 60000);
+}
+
+// ════════════════════════════════════════════════
+//  TIMER TICK
+// ════════════════════════════════════════════════
+function tick() {
+  if (!currentEntry) return;
+  const elapsed = Date.now() - currentEntry.startTime.getTime();
+  const h = Math.floor(elapsed / 3600000);
+  const m = Math.floor((elapsed % 3600000) / 60000);
+  const s = Math.floor((elapsed % 60000) / 1000);
+  const d = document.getElementById('timerDisplay');
+  d.style.color = currentEntry.color;
+  if (h > 0) {
+    d.innerHTML = `<span>${h}</span><span class="tu">h</span>&thinsp;<span>${String(m).padStart(2,'0')}</span><span class="tu">m</span>`;
+  } else {
+    d.innerHTML = `<span>${m}</span><span class="tu">m</span>&thinsp;<span>${String(s).padStart(2,'0')}</span><span class="tu">s</span>`;
+  }
+}
+
+// ════════════════════════════════════════════════
+//  NOW HERO
+// ════════════════════════════════════════════════
+function renderNowHero() {
+  const iconEl       = document.getElementById('nowIcon');
+  const nameEl       = document.getElementById('nowName');
+  const catEl        = document.getElementById('nowCategory');
+  const timerEl      = document.getElementById('timerDisplay');
+  const pulseDot     = document.getElementById('pulseDot');
+  const startedAtRow = document.getElementById('startedAtRow');
+  const stopBtn      = document.getElementById('stopBtn');
+  const switchLabel  = document.getElementById('switchLabel');
+  const hero         = document.getElementById('nowHero');
+
+  if (loading) {
+    iconEl.innerHTML = '<div class="loading-ring"></div>';
+    iconEl.style.filter = '';
+    nameEl.textContent  = 'Loading…';
+    catEl.textContent   = '';
+    timerEl.innerHTML   = '';
+    pulseDot.style.display     = 'none';
+    startedAtRow.style.display = 'none';
+    stopBtn.style.display      = 'none';
+    hero.style.background      = '';
+    return;
+  }
+
+  if (!currentEntry) {
+    // ── Idle state ──────────────────────
+    hero.style.background = '';
+    iconEl.style.filter   = 'none';
+    iconEl.style.color    = 'var(--text3)';
+    iconEl.innerHTML = `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="6" y="4" width="4" height="16" rx="1.5"/><rect x="14" y="4" width="4" height="16" rx="1.5"/></svg>`;
+    nameEl.textContent  = 'Not Tracking';
+    nameEl.style.color  = 'var(--text2)';
+    catEl.textContent   = 'Tap a category below to start';
+    catEl.style.color   = 'var(--text3)';
+    catEl.style.opacity = '1';
+    timerEl.innerHTML   = '';
+    pulseDot.style.display     = 'none';
+    startedAtRow.style.display = 'none';
+    stopBtn.style.display      = 'none';
+    switchLabel.textContent    = 'Start tracking';
+    return;
+  }
+
+  // ── Active tracking state ────────────
+  const act = findAct(currentEntry.actId) || {};
+  const color = currentEntry.color || '#f97316';
+
+  hero.style.background = `radial-gradient(ellipse at 50% 10%, ${hexToRgba(color, 0.14)} 0%, transparent 65%)`;
+  iconEl.style.color    = color;
+  iconEl.style.filter   = `drop-shadow(0 0 18px ${hexToRgba(color, 0.5)})`;
+  iconEl.innerHTML      = act.iconId
+    ? icon(act.iconId, 48)
+    : `<span style="font-size:38px;">${act.emoji || '⏱'}</span>`;
+
+  nameEl.textContent = currentEntry.name;
+  nameEl.style.color = '';
+
+  catEl.textContent   = currentEntry.category || '';
+  catEl.style.color   = color;
+  catEl.style.opacity = '0.8';
+
+  pulseDot.style.display    = '';
+  pulseDot.style.background = color;
+  pulseDot.style.setProperty('--act-glow', hexToRgba(color, 0.5));
+
+  document.getElementById('startedAt').textContent = fmtTime(currentEntry.startTime);
+  startedAtRow.style.display = '';
+  stopBtn.style.display      = '';
+  switchLabel.textContent    = 'Switch to';
+
+  tick();
+}
+
+// ════════════════════════════════════════════════
+//  ACTIVITY GRID
+// ════════════════════════════════════════════════
+function renderQuickGrid() {
+  const curId    = currentEntry?.actId;
+  const isChore  = CHORES.some(c => c.id === curId);
+  const isMeTime = METIME_SUBS.some(m => m.id === curId);
+
+  document.getElementById('quickGrid').innerHTML = ACTS.map(a => {
+    const active   = a.id === curId
+                  || (a.subKey === 'chores'  && isChore)
+                  || (a.subKey === 'metime'  && isMeTime);
+    const expanded = (a.subKey === 'chores' && choresOpen)
+                  || (a.subKey === 'metime' && meTimeOpen);
+
+    const onclickFn = a.hasSub
+      ? (a.subKey === 'chores' ? 'toggleChores()' : 'toggleMeTime()')
+      : `pickAct('${a.id}')`;
+
+    return `<div class="act-card ${active?'is-active':''} ${a.hasSub?'has-sub':''} ${expanded?'expanded':''}"
+                 style="background:${a.bg}; color:${a.color};"
+                 onclick="${onclickFn}">
+      <div class="act-icon">${icon(a.iconId, 36)}</div>
+      <div class="act-name">${a.name}</div>
+      ${a.hasSub ? '<div class="act-chev">▾</div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderChoresSub() {
+  const curId = currentEntry?.actId;
+  const cards = CHORES.map(c =>
+    `<div class="sub-card ${c.id===curId?'is-active':''}"
+          style="background:${c.bg}; color:${c.color};"
+          onclick="pickAct('${c.id}')">
+       <div class="sub-icon">${c.emoji}</div>
+       <div class="sub-name">${c.name}</div>
+     </div>`).join('');
+  document.getElementById('choresSubGrid').innerHTML = cards +
+    `<div class="add-sub-btn" onclick="addChore()">
+       <div style="font-size:18px;color:var(--text3);">＋</div>
+       <div style="font-size:8px;color:var(--text3);">Add</div>
+     </div>`;
+}
+
+function renderMeTimeSub() {
+  const curId = currentEntry?.actId;
+  const cards = METIME_SUBS.map(m =>
+    `<div class="sub-card ${m.id===curId?'is-active':''}"
+          style="background:${m.bg}; color:${m.color};"
+          onclick="pickAct('${m.id}')">
+       <div class="sub-icon">${m.emoji}</div>
+       <div class="sub-name">${m.name}</div>
+     </div>`).join('');
+  document.getElementById('meTimeSubGrid').innerHTML = cards +
+    `<div class="add-sub-btn" onclick="addMeTimeSub()">
+       <div style="font-size:18px;color:var(--text3);">＋</div>
+       <div style="font-size:8px;color:var(--text3);">Add</div>
+     </div>`;
+}
+
+function toggleChores() {
+  choresOpen = !choresOpen;
+  if (choresOpen) { meTimeOpen = false; document.getElementById('meTimeSub').classList.remove('open'); }
+  document.getElementById('choresSub').classList.toggle('open', choresOpen);
+  renderQuickGrid();
+}
+
+function toggleMeTime() {
+  meTimeOpen = !meTimeOpen;
+  if (meTimeOpen) { choresOpen = false; document.getElementById('choresSub').classList.remove('open'); }
+  document.getElementById('meTimeSub').classList.toggle('open', meTimeOpen);
+  renderQuickGrid();
+}
+
+function addChore() {
+  const name = prompt('New chore name:');
+  if (!name?.trim()) return;
+  const emojis = ['🧹','🪣','🔧','💡','🪟','🛁','🧴','🫧'];
+  CHORES.push({ id:'chore_'+Date.now(), name:name.trim(), emoji:emojis[CHORES.length%emojis.length], color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House' });
+  renderChoresSub();
+  showToast(`Added "${name.trim()}" to Chores`);
+}
+
+function addMeTimeSub() {
+  const name = prompt('New Me Time activity:');
+  if (!name?.trim()) return;
+  const emojis = ['🎮','📚','🎵','🧘','🎨','🏃','🛋️','🎬'];
+  METIME_SUBS.push({ id:'metime_'+Date.now(), name:name.trim(), emoji:emojis[METIME_SUBS.length%emojis.length], color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' });
+  renderMeTimeSub();
+  showToast(`Added "${name.trim()}" to Me Time`);
+}
+
+// ════════════════════════════════════════════════
+//  PICK ACTIVITY  (switches to a new category)
+// ════════════════════════════════════════════════
+async function pickAct(id) {
+  const next = findAct(id);
+  if (!next) return;
+  if (currentEntry && id === currentEntry.actId) return; // already tracking this
+
+  // Close sub-rows that don't match
+  if (!CHORES.find(c => c.id === id))     { choresOpen = false; document.getElementById('choresSub').classList.remove('open'); }
+  if (!METIME_SUBS.find(m => m.id === id)) { meTimeOpen = false; document.getElementById('meTimeSub').classList.remove('open'); }
+
+  showToast(`Starting ${next.name}…`);
+  try {
+    await startActivity(id);
+  } catch (e) {
+    console.error(e);
+    showToast('Error — check your connection');
+  }
+  // renderAll() fires automatically from the Firestore onSnapshot listener
+}
+
+// ════════════════════════════════════════════════
+//  DAY LOG HELPER  (converts entries to minute-based slots for display)
+// ════════════════════════════════════════════════
+function getLogForDay(targetDate) {
+  const midnight = getMidnight(targetDate);
+  const dayEnd   = new Date(midnight); dayEnd.setHours(23, 59, 59, 999);
+
+  return entries
+    .filter(e => e.startTime >= midnight && e.startTime <= dayEnd)
+    .sort((a, b) => a.startTime - b.startTime)
+    .map(e => ({
+      eid:       e.id,
+      actId:     e.actId,
+      name:      e.name,
+      color:     e.color,
+      startMins: dateToMins(e.startTime, midnight),
+      endMins:   e.endTime ? Math.min(1440, dateToMins(e.endTime, midnight)) : null,
+    }));
+}
+
+// ════════════════════════════════════════════════
+//  MULTI-DAY BARS
+// ════════════════════════════════════════════════
+function buildDaySlots(log, cap) {
+  const slots = []; let cursor = 0;
+  log.forEach(e => {
+    if (e.startMins > cursor) slots.push({ isGap:true,  startMins:cursor,       endMins:e.startMins });
+    const end = e.endMins ?? cap;
+    slots.push({ isGap:false, startMins:e.startMins, endMins:end, entry:e });
+    cursor = end;
+  });
+  if (cursor < cap) slots.push({ isGap:true, startMins:cursor, endMins:cap });
+  return slots;
+}
+
+function buildBarHTML(slots, isToday, dayMidnight) {
+  const T    = 1440;
+  const nowM = isToday ? getNowMins() : T;
+
+  return slots.map(s => {
+    const w = ((s.endMins - s.startMins) / T * 100).toFixed(3);
+    if (s.isGap) {
+      const isPast = !isToday || s.startMins < nowM;
+      if (!isPast) return `<div class="day-seg" style="width:${w}%;background:#18192a;"></div>`;
+      const gs = minsToDate(s.startMins, dayMidnight).toISOString();
+      const ge = minsToDate(Math.min(s.endMins, nowM), dayMidnight).toISOString();
+      return `<div class="day-seg gap-past" style="width:${w}%;" onclick="openAddSheetAt('${gs}','${ge}')"></div>`;
+    }
+    const clickFn = isToday ? `onclick="openEditSheet('${s.entry.eid}')"` : '';
+    return `<div class="day-seg" style="width:${w}%;background:${s.entry.color};" ${clickFn}></div>`;
+  }).join('');
+}
+
+function dayTrackedMins(log) {
+  const nowM = getNowMins();
+  return log.reduce((sum, e) => sum + (e.endMins ?? nowM) - e.startMins, 0);
+}
+
+function renderMultiDayBars() {
+  const T    = 1440;
+  const nowM = getNowMins();
+  let html   = '';
+
+  // Previous 5 days (oldest → newest, appear top → bottom)
+  for (let d = 5; d >= 1; d--) {
+    const date     = new Date(); date.setDate(date.getDate() - d);
+    const midnight = getMidnight(date);
+    const log      = getLogForDay(date);
+    const slots    = buildDaySlots(log, T);
+    const tracked  = dayTrackedMins(log);
+    const label    = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][date.getDay()];
+
+    html += `
+      <div class="day-row">
+        <div class="day-row-label">${label}</div>
+        <div class="day-row-bar-wrap">
+          <div class="day-row-bar">${buildBarHTML(slots, false, midnight)}</div>
+        </div>
+        <div class="day-row-hrs">${tracked > 0 ? minsToDur(tracked) : ''}</div>
+      </div>`;
+  }
+
+  // Today
+  const todayMidnight = getMidnight(new Date());
+  const todayLog      = getLogForDay(new Date());
+  const todaySlots    = buildDaySlots(todayLog, nowM);
+  const allSlots      = [...todaySlots, { isGap:true, startMins:nowM, endMins:T }];
+  const todayTracked  = dayTrackedMins(todayLog);
+  const nowPct        = (nowM / T * 100).toFixed(2);
+
+  html += `
+    <div class="day-row is-today">
+      <div class="day-row-label">Today</div>
+      <div class="day-row-bar-wrap" style="position:relative;">
+        <div class="day-row-bar">${buildBarHTML(allSlots, true, todayMidnight)}</div>
+        <div class="now-tick" style="left:${nowPct}%;"></div>
+      </div>
+      <div class="day-row-hrs">${minsToDur(todayTracked)}</div>
+    </div>
+    <div class="day-axis"><span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>12 AM</span></div>`;
+
+  document.getElementById('multiDaySection').innerHTML = html;
+
+  // Gap CTA
+  const gapSlot = todaySlots.find(s => s.isGap && s.startMins < nowM && (s.endMins - s.startMins) >= 5);
+  const ctaEl   = document.getElementById('gapCta');
+  if (gapSlot) {
+    const dur = Math.min(gapSlot.endMins, nowM) - gapSlot.startMins;
+    const gs  = minsToDate(gapSlot.startMins, todayMidnight).toISOString();
+    const ge  = minsToDate(Math.min(gapSlot.endMins, nowM), todayMidnight).toISOString();
+    ctaEl.style.display = 'flex';
+    ctaEl.innerHTML = `<div class="gap-cta-text">⚠️ ${minsToDur(dur)} gap at ${minsToAmPm(gapSlot.startMins)}</div><div class="gap-cta-btn">+ Fill →</div>`;
+    ctaEl.onclick   = () => openAddSheetAt(gs, ge);
+  } else {
+    ctaEl.style.display = 'none';
+  }
+}
+
+// ════════════════════════════════════════════════
+//  EDIT / ADD SHEET
+// ════════════════════════════════════════════════
+function openEditSheet(entryId) {
+  const entry = entries.find(e => e.id === entryId);
+  if (!entry) return;
+
+  const isCurrent = entry.endTime === null;
+  editState = { mode:'edit', id:entryId, actId:entry.actId, isCurrent };
+
+  document.getElementById('sheetTitle').textContent    = 'Edit entry';
+  document.getElementById('sheetDeleteBtn').style.display = isCurrent ? 'none' : 'block';
+  document.getElementById('inputStart').value          = dateToInputStr(entry.startTime);
+
+  const endField = document.getElementById('endTimeField');
+  if (isCurrent) {
+    endField.style.display = 'none';
+  } else {
+    endField.style.display = '';
+    document.getElementById('inputEnd').value = entry.endTime ? dateToInputStr(entry.endTime) : '';
+  }
+
+  document.getElementById('sheetError').textContent = '';
+  renderSheetCatGrid(entry.actId);
+  document.getElementById('editOverlay').classList.add('open');
+}
+
+function openAddSheetAt(startIso, endIso) {
+  const startDate = new Date(startIso);
+  const endDate   = new Date(endIso);
+
+  editState = { mode:'add', id:null, actId:null };
+
+  document.getElementById('sheetTitle').textContent       = 'Fill in time';
+  document.getElementById('sheetDeleteBtn').style.display = 'none';
+  document.getElementById('inputStart').value             = dateToInputStr(startDate);
+  document.getElementById('endTimeField').style.display   = '';
+  document.getElementById('inputEnd').value               = dateToInputStr(endDate);
+  document.getElementById('sheetError').textContent       = '';
+  renderSheetCatGrid(null);
+  document.getElementById('editOverlay').classList.add('open');
+}
+
+function closeEditSheet() {
+  document.getElementById('editOverlay').classList.remove('open');
+  editState = null;
+}
+
+function renderSheetCatGrid(selId) {
+  document.getElementById('sheetCatGrid').innerHTML = allActivities().map(a => `
+    <div class="sheet-cat-card ${a.id===selId?'selected':''}"
+         style="${a.id===selId?`background:${a.bg};`:''} color:${a.color};"
+         onclick="selectSheetCat('${a.id}')">
+      <div class="scc-icon">${a.iconId ? icon(a.iconId,22) : `<span style="font-size:20px;">${a.emoji}</span>`}</div>
+      <div class="scc-name">${a.name}</div>
+    </div>`).join('');
+}
+
+function selectSheetCat(id) {
+  if (editState) editState.actId = id;
+  renderSheetCatGrid(id);
+}
+
+async function saveEdit() {
+  const errEl = document.getElementById('sheetError');
+  errEl.textContent = '';
+  if (!editState) return;
+  if (!editState.actId) { errEl.textContent = 'Pick a category first.'; return; }
+
+  const startStr = document.getElementById('inputStart').value;
+  if (!startStr) { errEl.textContent = 'Enter a start time.'; return; }
+  const startDate = new Date(startStr);
+
+  let endDate = null;
+  if (!editState.isCurrent) {
+    const endStr = document.getElementById('inputEnd').value;
+    if (!endStr) { errEl.textContent = 'Enter an end time.'; return; }
+    endDate = new Date(endStr);
+    if (startDate >= endDate) { errEl.textContent = 'Start must be before end.'; return; }
+  }
+
+  try {
+    if (editState.mode === 'edit') {
+      await updateEntry(editState.id, editState.actId, startDate, endDate);
+      showToast('Entry updated ✓');
+    } else {
+      await addEntry(editState.actId, startDate, endDate);
+      showToast('Entry added ✓');
+    }
+    closeEditSheet();
+  } catch (e) {
+    console.error(e);
+    errEl.textContent = 'Error saving. Check your connection.';
+  }
+}
+
+async function deleteEntrySheet() {
+  if (!editState || editState.mode !== 'edit') return;
+  if (editState.isCurrent) { showToast("Can't delete the current activity"); return; }
+  try {
+    await removeEntry(editState.id);
+    closeEditSheet();
+    showToast('Entry deleted');
+  } catch (e) {
+    console.error(e);
+    showToast('Error deleting — check connection');
+  }
+}
+
+// ════════════════════════════════════════════════
+//  TIMELINE SCREEN
+// ════════════════════════════════════════════════
+function tlNavPrev() {
+  viewDate = new Date(viewDate);
+  viewDate.setDate(viewDate.getDate() - 1);
+  renderTimeline();
+}
+function tlNavNext() {
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+  if (viewDate < tomorrow) {
+    viewDate = new Date(viewDate);
+    viewDate.setDate(viewDate.getDate() + 1);
+    renderTimeline();
+  }
+}
+
+function renderTimeline() {
+  const today   = new Date();
+  const isToday = viewDate.toDateString() === today.toDateString();
+
+  document.getElementById('tlDateLabel').innerHTML =
+    `${isToday ? 'Today, ' : ''}${fmtDate(viewDate)}
+     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+
+  const midnight = getMidnight(viewDate);
+  const nowM     = isToday ? getNowMins() : 1440;
+  const log      = getLogForDay(viewDate);
+  const slots    = buildDaySlots(log, nowM);
+
+  const rows = slots
+    .map(s => {
+      if (!s.isGap) {
+        const e   = s.entry;
+        const end = e.endMins ?? nowM;
+        const dur = end - e.startMins;
+        const act = findAct(e.actId);
+        return { eid:e.eid, iconId:act?.iconId, emoji:act?.emoji, name:e.name, color:e.color,
+                 start:minsToAmPm(e.startMins), dur:minsToDur(dur), mins:dur, isGap:false };
+      } else {
+        const gEnd = Math.min(s.endMins, nowM);
+        const dur  = gEnd - s.startMins;
+        const gs   = minsToDate(s.startMins, midnight).toISOString();
+        const ge   = minsToDate(gEnd, midnight).toISOString();
+        return { isGap:true, name:'Untracked', start:minsToAmPm(s.startMins),
+                 dur:minsToDur(dur), mins:dur, gs, ge };
+      }
+    })
+    .filter(r => r.mins > 2);
+
+  if (rows.length === 0) {
+    document.getElementById('tlRows').innerHTML =
+      `<div class="empty-state">No entries for this day yet.<br>Tap a category on the Now tab to start tracking.</div>`;
+  } else {
+    document.getElementById('tlRows').innerHTML = rows.map(r => `
+      <div class="tl-row" onclick="${r.isGap ? `openAddSheetAt('${r.gs}','${r.ge}')` : `openEditSheet('${r.eid}')`}">
+        <div class="tl-time-lbl">${r.start}</div>
+        <div class="tl-block ${r.isGap?'tl-gap':''}"
+             style="${r.isGap?'':`background:${r.color}20;border-left:3px solid ${r.color};`} min-height:${Math.max(44,r.mins*0.28)}px;">
+          <div class="tl-block-left">
+            <div class="tl-block-icon" style="color:${r.color||'#f59e0b'};">
+              ${r.iconId ? icon(r.iconId,18) : r.emoji ? `<span style="font-size:16px;">${r.emoji}</span>` : '<span style="font-size:16px;">?</span>'}
+            </div>
+            <div class="tl-block-name">${r.name}</div>
+          </div>
+          ${r.isGap ? `<div class="tl-gap-add">+ Add</div>` : `<div class="tl-block-dur">${r.dur}</div>`}
+        </div>
+      </div>`).join('');
+  }
+
+  // Mini bar
+  const allS = buildDaySlots(log, 1440);
+  document.getElementById('miniBar').innerHTML = allS.map(s => {
+    const w = ((s.endMins - s.startMins) / 1440 * 100).toFixed(2);
+    const c = s.isGap ? (s.startMins < nowM ? '#2a2a3a' : '#1d1f2a') : s.entry.color;
+    return `<div class="mini-tl-seg" style="width:${w}%;background:${c};"></div>`;
+  }).join('');
+
+  // Category summary
+  const totals = {};
+  log.forEach(e => {
+    const end = e.endMins ?? nowM;
+    totals[e.actId] = (totals[e.actId] || 0) + (end - e.startMins);
+  });
+  const top = Object.entries(totals).sort((a,b) => b[1]-a[1]).slice(0,4).map(([id,m]) => {
+    const a = findAct(id);
+    return { name:a?.name||id, time:minsToDur(m), pct:Math.round(m/Math.max(nowM,1)*100)+'%', color:a?.color||'#888' };
+  });
+  document.getElementById('catSummary').innerHTML = top.map(c => `
+    <div class="cat-sum-item">
+      <div class="cat-sum-name" style="color:${c.color};">${c.name}</div>
+      <div class="cat-sum-time">${c.time}</div>
+      <div class="cat-sum-pct">${c.pct}</div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════
+//  INSIGHTS SCREEN
+// ════════════════════════════════════════════════
+function getWeekBounds(offset) {
+  const now       = new Date();
+  const dayOfWeek = now.getDay(); // 0 = Sunday
+  const start     = new Date(now);
+  start.setDate(now.getDate() - dayOfWeek + offset * 7);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
+}
+
+function insNavPrev() { insWeekOff--; renderInsights(); }
+function insNavNext() { if (insWeekOff < 0) { insWeekOff++; renderInsights(); } }
+
+function renderInsights() {
+  const { start, end } = getWeekBounds(insWeekOff);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  const rangeLabel = insWeekOff === 0
+    ? 'This week'
+    : `${months[start.getMonth()]} ${start.getDate()} – ${months[end.getMonth()]} ${end.getDate()}`;
+
+  document.getElementById('insWeekRange').innerHTML =
+    `${rangeLabel} <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+
+  const week = entries.filter(e => e.startTime >= start && e.startTime <= end);
+
+  if (week.length === 0) {
+    document.getElementById('catBars').innerHTML =
+      `<div class="empty-state">No data yet for this period.<br>Start tracking and your insights will appear here.</div>`;
+    document.getElementById('statGrid').innerHTML = '';
+    return;
+  }
+
+  // Totals by category
+  const totals = {}; let totalTracked = 0;
+  week.forEach(e => {
+    const ms   = (e.endTime ? e.endTime.getTime() : Date.now()) - e.startTime.getTime();
+    const mins = Math.round(ms / 60000);
+    totals[e.actId] = (totals[e.actId] || 0) + mins;
+    totalTracked += mins;
+  });
+
+  const sorted = Object.entries(totals).sort((a,b) => b[1]-a[1]);
+  const maxM   = sorted[0]?.[1] || 1;
+
+  document.getElementById('catBars').innerHTML = sorted.slice(0,6).map(([id, mins]) => {
+    const act  = findAct(id);
+    const pct  = Math.round(mins / maxM * 100);
+    const ofWk = Math.round(mins / totalTracked * 100);
+    return `
+      <div class="cat-bar-row">
+        <div class="cat-bar-ico" style="background:${act?.bg||'#1d1f2a'};color:${act?.color||'#888'};">
+          ${act?.iconId ? icon(act.iconId,22) : `<span style="font-size:18px;">${act?.emoji||'⏱'}</span>`}
+        </div>
+        <div class="cat-bar-info">
+          <div class="cat-bar-meta">
+            <span class="cat-bar-name">${act?.name||id}</span>
+            <span class="cat-bar-hours">${minsToDur(mins)} · ${ofWk}%</span>
+          </div>
+          <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%;background:${act?.color||'#888'};"></div></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Stats
+  const dayCount = new Set(week.map(e => e.startTime.toDateString())).size;
+  const avgPerDay = dayCount > 0 ? minsToDur(Math.round(totalTracked / dayCount)) : '—';
+
+  document.getElementById('statGrid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-card-lbl">⏱ Total tracked</div>
+      <div class="stat-card-val">${minsToDur(totalTracked)}</div>
+      <div class="stat-chg">${dayCount} day${dayCount!==1?'s':''} logged</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-lbl">🔄 Switches</div>
+      <div class="stat-card-val">${week.length - 1}</div>
+      <div class="stat-chg">across ${week.length} entries</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-lbl">📅 Days active</div>
+      <div class="stat-card-val">${dayCount}</div>
+      <div class="stat-chg">out of 7 this week</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-lbl">⚡ Avg per day</div>
+      <div class="stat-card-val">${avgPerDay}</div>
+      <div class="stat-chg">when tracking</div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════
+//  MORE SCREEN
+// ════════════════════════════════════════════════
+function renderMore() {
+  const rows = [
+    { iconId:'chores',  color:'#10b981', lbl:'Manage activities' },
+    { iconId:'work',    color:'#f97316', lbl:'Settings'          },
+    { iconId:'errands', color:'#3b82f6', lbl:'Export data'       },
+    { iconId:'metime',  color:'#06b6d4', lbl:'Help & feedback'   },
+  ];
+  document.getElementById('moreRows').innerHTML = rows.map(r => `
+    <div class="more-row">
+      <div class="more-ico" style="color:${r.color};">${icon(r.iconId,20)}</div>
+      <div class="more-lbl">${r.lbl}</div>
+      <div class="more-chev">›</div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════
+//  TAB NAVIGATION
+// ════════════════════════════════════════════════
+function goTab(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('s-' + n).classList.add('active');
+  document.querySelector(`.nav-btn[data-tab="${n}"]`).classList.add('active');
+  if (n === 'timeline') renderTimeline();
+  if (n === 'insights') renderInsights();
+}
+
+// ════════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════════
+let toastT;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ════════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>

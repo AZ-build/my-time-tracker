@@ -53,6 +53,7 @@
     }
 
     .now-icon {
+      display: none;
       margin-bottom: 8px;
       filter: drop-shadow(0 0 18px var(--act-color, #f97316));
       transition: filter 0.4s, color 0.3s;
@@ -510,27 +511,27 @@ function icon(id, size) {
 //  ACTIVITIES
 // ════════════════════════════════════════════════
 const ACTS = [
-  { id:'sleep',   name:'Sleep',    iconId:'sleep',   color:'#a855f7', bg:'rgba(168,85,247,0.22)', category:'Health'  },
-  { id:'cook',    name:'Cook',     iconId:'cook',    color:'#ef4444', bg:'rgba(239,68,68,0.22)',  category:'House'   },
-  { id:'eat',     name:'Eat',      iconId:'eat',     color:'#f59e0b', bg:'rgba(245,158,11,0.22)', category:'Food'    },
-  { id:'kids',    name:'Kids',     iconId:'kids',    color:'#ec4899', bg:'rgba(236,72,153,0.22)', category:'Family'  },
-  { id:'chores',  name:'Chores',   iconId:'chores',  color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House',  hasSub:true, subKey:'chores'  },
-  { id:'errands', name:'Errands',  iconId:'errands', color:'#3b82f6', bg:'rgba(59,130,246,0.22)', category:'Errands' },
-  { id:'work',    name:'Work',     iconId:'work',    color:'#f97316', bg:'rgba(249,115,22,0.22)', category:'Work'    },
-  { id:'metime',  name:'Me Time',  iconId:'metime',  color:'#06b6d4', bg:'rgba(6,182,212,0.22)',  category:'Self',   hasSub:true, subKey:'metime'  },
+  { id:'sleep',   name:'Sleep',    bannerName:'Sleeping',            iconId:'sleep',   color:'#a855f7', bg:'rgba(168,85,247,0.22)', category:'Health'  },
+  { id:'cook',    name:'Cook',     bannerName:'Cooking',             iconId:'cook',    color:'#ef4444', bg:'rgba(239,68,68,0.22)',  category:'House'   },
+  { id:'eat',     name:'Eat',      bannerName:'Eating',              iconId:'eat',     color:'#f59e0b', bg:'rgba(245,158,11,0.22)', category:'Food'    },
+  { id:'kids',    name:'Kids',     bannerName:'With the Kids',       iconId:'kids',    color:'#ec4899', bg:'rgba(236,72,153,0.22)', category:'Family'  },
+  { id:'chores',  name:'Chores',   bannerName:'Doing Chores',        iconId:'chores',  color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House',  hasSub:true, subKey:'chores'  },
+  { id:'errands', name:'Errands',  bannerName:'Running Errands',     iconId:'errands', color:'#3b82f6', bg:'rgba(59,130,246,0.22)', category:'Errands' },
+  { id:'work',    name:'Work',     bannerName:'Working',             iconId:'work',    color:'#f97316', bg:'rgba(249,115,22,0.22)', category:'Work'    },
+  { id:'metime',  name:'Me Time',  bannerName:'Me Time',             iconId:'metime',  color:'#06b6d4', bg:'rgba(6,182,212,0.22)',  category:'Self',   hasSub:true, subKey:'metime'  },
 ];
 
 let CHORES = [
-  { id:'dishes',  name:'Dishes',         emoji:'🧽', color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House' },
-  { id:'plants',  name:'Water Plants',   emoji:'🪴', color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House' },
-  { id:'mow',     name:'Mow Lawn',       emoji:'🌿', color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House' },
-  { id:'trash',   name:'Take Out Trash', emoji:'🗑️', color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House' },
+  { id:'dishes',  name:'Dishes',         bannerName:'Doing Dishes',       emoji:'🧽', color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House' },
+  { id:'plants',  name:'Water Plants',   bannerName:'Watering Plants',    emoji:'🪴', color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House' },
+  { id:'mow',     name:'Mow Lawn',       bannerName:'Mowing the Lawn',    emoji:'🌿', color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House' },
+  { id:'trash',   name:'Take Out Trash', bannerName:'Taking Out Trash',   emoji:'🗑️', color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House' },
 ];
 
 let METIME_SUBS = [
-  { id:'watchsports',  name:'Watch Sports',     emoji:'⚽', color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' },
-  { id:'projects',     name:'Work on Projects', emoji:'🛠️', color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' },
-  { id:'meetfriends',  name:'Meet Friends',     emoji:'🤝', color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' },
+  { id:'watchsports',  name:'Watch Sports',     bannerName:'Watching Sports',       emoji:'⚽', color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' },
+  { id:'projects',     name:'Work on Projects', bannerName:'Working on Projects',   emoji:'🛠️', color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' },
+  { id:'meetfriends',  name:'Meet Friends',     bannerName:'Meeting Friends',       emoji:'🤝', color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' },
 ];
 
 function allActivities() {
@@ -829,7 +830,7 @@ function renderNowHero() {
     ? icon(act.iconId, 48)
     : `<span style="font-size:38px;">${act.emoji || '⏱'}</span>`;
 
-  nameEl.textContent = currentEntry.name;
+  nameEl.textContent = act.bannerName || currentEntry.name;
   nameEl.style.color = '';
 
   catEl.textContent   = currentEntry.category || '';

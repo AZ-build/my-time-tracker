@@ -158,7 +158,7 @@
     .switch-label { font-size: 10px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; }
 
     /* 4-col activity grid */
-    .act-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .act-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .act-card {
       border-radius: 14px; padding: 12px 4px 10px;
       display: flex; flex-direction: column; align-items: center; gap: 7px;
@@ -494,33 +494,35 @@ if (CONFIGURED) {
 //  SVG ICON PATHS  (stroke="currentColor")
 // ════════════════════════════════════════════════
 const SVG_PATHS = {
-  sleep:   `<path d="M14.8 3.2a7.8 7.8 0 1 0 6 12.4A8.8 8.8 0 1 1 14.8 3.2Z"/><path d="M16.8 6.2v1.8"/><path d="M15.9 7.1h1.8"/><path d="M19.5 8.8v1.2"/><path d="M18.9 9.4h1.2"/>`,
-  cook:    `<path d="M5 10h10a3 3 0 0 1 3 3v3H8a3 3 0 0 1-3-3v-3Z"/><path d="M4 10h15"/><path d="M18 12h1a2 2 0 0 1 0 4h-1"/><path d="M8 10a4 4 0 0 1 8 0"/><path d="M9 5.5c0-.8.5-1.5 1.2-1.9"/><path d="M12 5c0-.9.6-1.7 1.5-2"/>`,
-  eat:     `<path d="M6 3v7"/><path d="M4 3v4"/><path d="M8 3v4"/><path d="M4 7h4"/><path d="M6 10v11"/><path d="M15 3c1.7 0 3 1.7 3 4v14"/><path d="M15 3v18"/><path d="M15 11h3"/>`,
-  kids:    `<circle cx="9" cy="8" r="2.5"/><circle cx="15.5" cy="9" r="2"/><path d="M4.5 18a4.5 4.5 0 0 1 9 0"/><path d="M12.5 18a3.5 3.5 0 0 1 7 0"/>`,
-  chores:  `<path d="M4 17h10"/><path d="M13.5 6.5 6 14v3h3l7.5-7.5"/><path d="M12 5l2-2 4 4-2 2"/><path d="M18.5 13.5v2"/><path d="M17.5 14.5h2"/><path d="M20.5 9.5v1.2"/><path d="M19.9 10.1h1.2"/>`,
-  errands: `<path d="M12 21s6-5.3 6-10a6 6 0 1 0-12 0c0 4.7 6 10 6 10Z"/><path d="m10.5 11.5 1.2 1.2 2.8-3"/>`,
-  work:    `<rect x="3" y="7" width="18" height="12" rx="2.5"/><path d="M9 7V5.8A1.8 1.8 0 0 1 10.8 4h2.4A1.8 1.8 0 0 1 15 5.8V7"/><path d="M3 11.5h18"/><path d="M10.5 11.5v2h3v-2"/>`,
-  metime:  `<circle cx="10" cy="10" r="4.5"/><path d="M7.8 9.4c.5-.8 1.3-1.4 2.2-1.4s1.7.6 2.2 1.4"/><path d="M8.5 12.1c.4.6 1 .9 1.5.9s1.1-.3 1.5-.9"/><path d="M17.6 5.5v2.2"/><path d="M16.5 6.6h2.2"/><path d="M15.5 16.5c.8.8 1.9 1.3 3 1.3"/><path d="M18.8 15.6c-.1 1.1.3 2.1 1.1 3"/>`,
+  sleep:    { vb:24,  body:`<path fill="currentColor" d="M9 12.504a1 1 0 0 1 .846 1.534l-.065.091L5.08 20H9a1 1 0 0 1 .993.883L10 21a1 1 0 0 1-.883.993L9 22H3a1 1 0 0 1-.846-1.534l.065-.09l4.699-5.872H3a1 1 0 0 1-.993-.883L2 13.504a1 1 0 0 1 .883-.993L3 12.504zM21 2a1 1 0 0 1 .84 1.542l-.066.091L14.109 13h6.89a1 1 0 0 1 .994.883L22 14a1 1 0 0 1-.884.993L21 15h-9a1 1 0 0 1-.84-1.542l.066-.091L18.889 4h-6.89a1 1 0 0 1-.992-.883L11 3a1 1 0 0 1 .883-.993L12 2z"/>` },
+  cook:     { vb:256, body:`<path fill="currentColor" d="M88 48V16a8 8 0 0 1 16 0v32a8 8 0 0 1-16 0m40 8a8 8 0 0 0 8-8V16a8 8 0 0 0-16 0v32a8 8 0 0 0 8 8m32 0a8 8 0 0 0 8-8V16a8 8 0 0 0-16 0v32a8 8 0 0 0 8 8m94.4 35.2a8 8 0 0 0-11.2-1.6L224 104V80a8 8 0 0 0-8-8H40a8 8 0 0 0-8 8v24L12.8 89.6a8 8 0 0 0-9.6 12.8L32 124v60a32 32 0 0 0 32 32h128a32 32 0 0 0 32-32v-60l28.8-21.6a8 8 0 0 0 1.6-11.2"/>` },
+  eat:      { vb:24,  body:`<path fill="currentColor" d="M3.743 2.816A.88.88 0 0 1 5.5 2.88v4.494a.625.625 0 1 0 1.25 0V2.75a.75.75 0 0 1 1.5 0v4.624a.625.625 0 1 0 1.25 0V2.88a.88.88 0 0 1 1.757-.064C11.3 3.428 11.5 6.37 11.5 8c0 1.35-.67 2.544-1.692 3.267c-.216.153-.268.315-.263.397c.123 1.878.455 7.018.455 7.833a2.5 2.5 0 0 1-5 0c0-.816.332-5.955.455-7.833c.005-.082-.047-.244-.263-.397A4 4 0 0 1 3.5 8c0-1.63.2-4.572.243-5.184M13 7.75A5.75 5.75 0 0 1 18.75 2a.75.75 0 0 1 .75.75v8.5c0 .318.106 1.895.225 3.642l.005.083c.13 1.908.27 3.983.27 4.522a2.5 2.5 0 0 1-5 0c0-.514.128-2.611.252-4.534c.062-.971.125-1.912.172-2.61l.023-.353h-.697A1.75 1.75 0 0 1 13 10.25z"/>` },
+  kids:     { vb:28,  body:`<path fill="currentColor" d="M18.465 13.8c.72-1.018 2.35-1.08 3.156-.102l3.332 4.046l.487.596c.41.502.453 1.211.1 1.756a60 60 0 0 1-.587.892a15 15 0 0 1-1.486 1.886c-1.056 1.114-2.242 1.877-3.554 1.877c-.99 0-1.867-.405-2.797-1.008c-.47-.305-.92-.635-1.413-.981c-.362-.254-.74-.512-1.136-.745l-.402-.224c-.459-.241-.67-.881-.372-1.306l3.953-5.635l-.012-.008l.732-1.041zM8.088 13c.99 0 1.866.405 2.796 1.008c.47.304.92.634 1.414.981c.482.338.993.682 1.536.967l.258.139c.342.176.511.627.29.942l-4.846 6.91l-.146.18c-.723.788-2.06.84-2.85.097l-.16-.172l-3.817-4.635a1.52 1.52 0 0 1-.1-1.75l.1-.16c.527-.836 1.183-1.8 1.97-2.631C5.589 13.76 6.776 13 8.088 13M8.5 3a3.5 3.5 0 1 1 0 7a3.5 3.5 0 0 1 0-7m11 0a3.5 3.5 0 1 1 0 7a3.5 3.5 0 0 1 0-7"/>` },
+  chores:   { vb:24,  body:`<path fill="currentColor" fill-rule="evenodd" d="m12.716 1.699l-.342.94l-3.827 10.53a4.54 4.54 0 0 1 2.925 4.245v.515c0 .72.24 1.42.681 1.99l2.182 2.816H1.06l1.444-6.331A4.54 4.54 0 0 1 6.52 12.89l3.975-10.935l.341-.94zm9.224 21.285h1v-2H16.2v2zm-.61-3.638h-6.74v-2h6.74zm-3.012-3.832h1v-2h-6.74v2z" clip-rule="evenodd"/>` },
+  errands:  { vb:256, body:`<path fill="currentColor" d="m239.71 74.14l-25.64 92.28A24.06 24.06 0 0 1 191 184H92.16A24.06 24.06 0 0 1 69 166.42L33.92 40H16a8 8 0 0 1 0-16h24a8 8 0 0 1 7.71 5.86L57.19 64H232a8 8 0 0 1 7.71 10.14M88 200a16 16 0 1 0 16 16a16 16 0 0 0-16-16m104 0a16 16 0 1 0 16 16a16 16 0 0 0-16-16"/>` },
+  work:     { vb:20,  body:`<path fill="currentColor" d="M3 2a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zm0 6a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1zm0 6a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1zm9-12a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zm0 6a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1z"/>` },
+  projects: { vb:24,  body:`<path fill="currentColor" d="M23 6.5a5.5 5.5 0 1 1-11 0a5.5 5.5 0 0 1 11 0m-2.146-2.354a.5.5 0 0 0-.708 0L16.5 7.793l-1.646-1.647a.5.5 0 0 0-.708.708l2 2a.5.5 0 0 0 .708 0l4-4a.5.5 0 0 0 0-.708M17.5 13q.36 0 .71-.038q-.658 1.11-1.725 2.13a.25.25 0 0 0-.071.125l-.528 2.283H8.114l-.526-2.283a.25.25 0 0 0-.071-.125c-1.83-1.747-2.767-3.704-2.767-5.84a7.25 7.25 0 0 1 8.02-7.21A6.5 6.5 0 0 0 17.5 13m-1.962 6l-.29 1.258a2.25 2.25 0 0 1-2.02 1.736l-.173.006h-2.111a2.25 2.25 0 0 1-2.147-1.576l-.046-.168L8.461 19z"/>` },
+  metime:   { vb:24,  body:`<path fill="currentColor" d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10s10-4.486 10-10S17.514 2 12 2m4.095 14.244a6 6 0 0 1-3.034 1.634a6.05 6.05 0 0 1-2.414 0a5.9 5.9 0 0 1-2.148-.903a6.1 6.1 0 0 1-1.621-1.622l1.658-1.117q.216.318.488.59a4 4 0 0 0 1.273.86q.366.154.749.232a4.1 4.1 0 0 0 1.616 0q.381-.079.75-.233c.234-.1.464-.224.679-.368q.313-.214.591-.489q.275-.274.489-.592l1.658 1.117c-.215.32-.462.62-.734.891M19 10a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2h-2a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8h14z"/>` },
 };
 
 function icon(id, size) {
-  const p = SVG_PATHS[id] || SVG_PATHS.work;
-  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+  const d = SVG_PATHS[id] || SVG_PATHS.work;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${d.vb} ${d.vb}" fill="currentColor">${d.body}</svg>`;
 }
 
 // ════════════════════════════════════════════════
 //  ACTIVITIES
 // ════════════════════════════════════════════════
 const ACTS = [
-  { id:'sleep',   name:'Sleep',    bannerName:'Sleeping',            iconId:'sleep',   color:'#a855f7', bg:'rgba(168,85,247,0.22)', category:'Health'  },
-  { id:'cook',    name:'Cook',     bannerName:'Cooking',             iconId:'cook',    color:'#ef4444', bg:'rgba(239,68,68,0.22)',  category:'House'   },
-  { id:'eat',     name:'Eat',      bannerName:'Eating',              iconId:'eat',     color:'#f59e0b', bg:'rgba(245,158,11,0.22)', category:'Food'    },
-  { id:'kids',    name:'Kids',     bannerName:'With the Kids',       iconId:'kids',    color:'#ec4899', bg:'rgba(236,72,153,0.22)', category:'Family'  },
-  { id:'chores',  name:'Chores',   bannerName:'Doing Chores',        iconId:'chores',  color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House',  hasSub:true, subKey:'chores'  },
-  { id:'errands', name:'Errands',  bannerName:'Running Errands',     iconId:'errands', color:'#3b82f6', bg:'rgba(59,130,246,0.22)', category:'Errands' },
-  { id:'work',    name:'Work',     bannerName:'Working',             iconId:'work',    color:'#f97316', bg:'rgba(249,115,22,0.22)', category:'Work'    },
-  { id:'metime',  name:'Me Time',  bannerName:'Me Time',             iconId:'metime',  color:'#06b6d4', bg:'rgba(6,182,212,0.22)',  category:'Self',   hasSub:true, subKey:'metime'  },
+  { id:'sleep',    name:'Sleep',    bannerName:'Sleeping',          iconId:'sleep',    color:'#2563eb', bg:'rgba(37,99,235,0.22)',   category:'Health'   },
+  { id:'work',     name:'Work',     bannerName:'Working',           iconId:'work',     color:'#ef4444', bg:'rgba(239,68,68,0.22)',   category:'Work'     },
+  { id:'cook',     name:'Cook',     bannerName:'Cooking',           iconId:'cook',     color:'#f97316', bg:'rgba(249,115,22,0.22)',  category:'House'    },
+  { id:'eat',      name:'Eat',      bannerName:'Eating',            iconId:'eat',      color:'#eab308', bg:'rgba(234,179,8,0.22)',   category:'Food'     },
+  { id:'kids',     name:'Kids',     bannerName:'With the Kids',     iconId:'kids',     color:'#22c55e', bg:'rgba(34,197,94,0.22)',   category:'Family'   },
+  { id:'chores',   name:'Chores',   bannerName:'Doing Chores',      iconId:'chores',   color:'#ec4899', bg:'rgba(236,72,153,0.22)',  category:'House',   hasSub:true, subKey:'chores'  },
+  { id:'errands',  name:'Errands',  bannerName:'Running Errands',   iconId:'errands',  color:'#8b5cf6', bg:'rgba(139,92,246,0.22)', category:'Errands'  },
+  { id:'projects', name:'Projects', bannerName:'On a Project',      iconId:'projects', color:'#6366f1', bg:'rgba(99,102,241,0.22)', category:'Projects' },
+  { id:'metime',   name:'Me',       bannerName:'Me Time',           iconId:'metime',   color:'#06b6d4', bg:'rgba(6,182,212,0.22)',  category:'Self',    hasSub:true, subKey:'metime'  },
 ];
 
 let CHORES = [
@@ -531,9 +533,8 @@ let CHORES = [
 ];
 
 let METIME_SUBS = [
-  { id:'watchsports',  name:'Watch Sports',     bannerName:'Watching Sports',       emoji:'⚽', color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' },
-  { id:'projects',     name:'Work on Projects', bannerName:'Working on Projects',   emoji:'🛠️', color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' },
-  { id:'meetfriends',  name:'Meet Friends',     bannerName:'Meeting Friends',       emoji:'🤝', color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' },
+  { id:'watchsports',  name:'Watch Sports',  bannerName:'Watching Sports',  emoji:'⚽', color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' },
+  { id:'meetfriends',  name:'Meet Friends',  bannerName:'Meeting Friends',  emoji:'🤝', color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' },
 ];
 
 function allActivities() {
@@ -1015,7 +1016,8 @@ function buildBarHTML(slots, isToday, dayMidnight) {
       return `<div class="day-seg gap-past" style="width:${w}%;" onclick="openAddSheetAt('${gs}','${ge}')"></div>`;
     }
     const clickFn = isToday ? `onclick="openEditSheet('${s.entry.eid}')"` : '';
-    return `<div class="day-seg" style="width:${w}%;background:${s.entry.color};" ${clickFn}></div>`;
+    const barColor = findAct(s.entry.actId)?.color || s.entry.color;
+        return `<div class="day-seg" style="width:${w}%;background:${barColor};" ${clickFn}></div>`;
   }).join('');
 }
 
@@ -1230,7 +1232,7 @@ function renderTimeline() {
         const end = e.endMins ?? nowM;
         const dur = end - e.startMins;
         const act = findAct(e.actId);
-        return { eid:e.eid, iconId:act?.iconId, emoji:act?.emoji, name:e.name, color:e.color,
+        return { eid:e.eid, iconId:act?.iconId, emoji:act?.emoji, name:e.name, color:act?.color || e.color,
                  start:minsToAmPm(e.startMins), dur:minsToDur(dur), mins:dur, isGap:false };
       } else {
         const gEnd = Math.min(s.endMins, nowM);

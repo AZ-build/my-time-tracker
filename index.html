@@ -418,6 +418,32 @@
 
   <div id="toast"></div>
 
+  <!-- ─── Add Subcategory Sheet ─────────── -->
+  <div class="overlay" id="addSubOverlay">
+    <div class="overlay-bg" onclick="closeAddSubSheet()"></div>
+    <div class="sheet-panel">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="addSubTitle">New Activity</div>
+      <div class="sheet-cat-label">Name</div>
+      <input type="text" id="addSubName" placeholder="e.g. Vacuum, Read, Gym…"
+        style="width:100%;box-sizing:border-box;background:var(--surface2);border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;font-size:15px;color:var(--text);font-family:inherit;margin-bottom:18px;outline:none;"
+        oninput="addSubNameChanged()" />
+      <div class="sheet-cat-label">Emoji</div>
+      <div id="addSubEmojiGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:14px;"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;">
+        <span style="font-size:12px;color:var(--text3);white-space:nowrap;">Or type any:</span>
+        <input type="text" id="addSubCustomEmoji" maxlength="2" placeholder="🙂"
+          style="width:52px;text-align:center;font-size:22px;background:var(--surface2);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;padding:6px;color:var(--text);font-family:inherit;outline:none;"
+          oninput="addSubCustomEmojiChanged()" />
+      </div>
+      <div class="sheet-error" id="addSubError"></div>
+      <div class="sheet-actions">
+        <button class="sheet-btn cancel" onclick="closeAddSubSheet()">Cancel</button>
+        <button class="sheet-btn save" onclick="confirmAddSub()">Add</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ─── Edit / Add Sheet ─────────────── -->
   <div class="overlay" id="editOverlay">
     <div class="overlay-bg" onclick="closeEditSheet()"></div>
@@ -654,6 +680,7 @@ function listenToEntries() {
       currentEntry = entries.find(e => e.endTime === null) || null;
       loading = false;
       renderAll();
+      backfillOrphanedSubs();
     }, err => {
       console.error('Firestore error:', err);
       loading = false;
@@ -733,6 +760,69 @@ async function removeEntry(id) {
   await db.collection('entries').doc(id).delete();
 }
 
+// Save a custom subcategory to Firestore
+async function saveCustomSubToFirestore(sub, type) {
+  if (!db) return;
+  await db.collection('subcategories').doc(sub.id).set({
+    type,
+    name:      sub.name,
+    emoji:     sub.emoji,
+    color:     sub.color,
+    bg:        sub.bg,
+    category:  sub.category,
+    createdAt: firebase.firestore.Timestamp.now(),
+  });
+}
+
+// Load custom subcategories from Firestore on startup
+async function loadCustomSubs() {
+  if (!db) return;
+  try {
+    const snap = await db.collection('subcategories').orderBy('createdAt', 'asc').get();
+    snap.forEach(doc => {
+      const d = doc.data();
+      const sub = { id: doc.id, name: d.name, emoji: d.emoji, color: d.color, bg: d.bg, category: d.category };
+      if (d.type === 'chores' && !CHORES.find(c => c.id === doc.id)) {
+        CHORES.push(sub);
+      } else if (d.type === 'metime' && !METIME_SUBS.find(m => m.id === doc.id)) {
+        METIME_SUBS.push(sub);
+      }
+    });
+    renderChoresSub();
+    renderMeTimeSub();
+  } catch(e) {
+    console.warn('Could not load custom subcategories:', e);
+  }
+}
+
+// Heal any custom subs created before persistence was added — reconstruct from entry data
+async function backfillOrphanedSubs() {
+  if (!db) return;
+  const seen = new Set();
+  let changed = false;
+  for (const entry of entries) {
+    const id = entry.actId;
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    if (id.startsWith('chore_') && !CHORES.find(c => c.id === id)) {
+      const sub = { id, name: entry.name, emoji: '🧹', color: '#10b981', bg: 'rgba(16,185,129,0.22)', category: 'House' };
+      CHORES.push(sub);
+      await saveCustomSubToFirestore(sub, 'chores');
+      changed = true;
+    } else if (id.startsWith('metime_') && !METIME_SUBS.find(m => m.id === id)) {
+      const sub = { id, name: entry.name, emoji: '✨', color: '#06b6d4', bg: 'rgba(6,182,212,0.22)', category: 'Self' };
+      METIME_SUBS.push(sub);
+      await saveCustomSubToFirestore(sub, 'metime');
+      changed = true;
+    }
+  }
+  if (changed) {
+    renderChoresSub();
+    renderMeTimeSub();
+    renderAll();
+  }
+}
+
 // ════════════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════════════
@@ -749,6 +839,7 @@ function renderAll() {
 function init() {
   renderMore();
   if (CONFIGURED) {
+    loadCustomSubs();
     listenToEntries();
   } else {
     loading = false;
@@ -927,22 +1018,92 @@ function toggleMeTime() {
   renderQuickGrid();
 }
 
-function addChore() {
-  const name = prompt('New chore name:');
-  if (!name?.trim()) return;
-  const emojis = ['🧹','🪣','🔧','💡','🪟','🛁','🧴','🫧'];
-  CHORES.push({ id:'chore_'+Date.now(), name:name.trim(), emoji:emojis[CHORES.length%emojis.length], color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House' });
-  renderChoresSub();
-  showToast(`Added "${name.trim()}" to Chores`);
+// ════════════════════════════════════════════════
+//  ADD SUBCATEGORY SHEET
+// ════════════════════════════════════════════════
+const CHORE_EMOJIS  = ['🧹','🪣','🔧','💡','🪟','🛁','🧴','🫧','🧺','🪴','🧻','🍳','🧊','🛒','🪑','🔑','🚿','🗑️','🪞','🖼️'];
+const METIME_EMOJIS = ['🎮','📚','🎵','🧘','🎨','🏃','🛋️','🎬','🎸','🎯','🏋️','🧩','🎲','🚴','✏️','🎤','🍵','🎻','🌄','🏊'];
+
+let _addSubType       = 'chores'; // 'chores' | 'metime'
+let _addSubPickedEmoji = '';
+
+function addChore() { openAddSubSheet('chores'); }
+function addMeTimeSub() { openAddSubSheet('metime'); }
+
+function openAddSubSheet(type) {
+  _addSubType = type;
+  const emojis = type === 'chores' ? CHORE_EMOJIS : METIME_EMOJIS;
+  _addSubPickedEmoji = emojis[0];
+
+  document.getElementById('addSubTitle').textContent = type === 'chores' ? 'New Chore' : 'New Me Time Activity';
+  document.getElementById('addSubName').value = '';
+  document.getElementById('addSubCustomEmoji').value = '';
+  document.getElementById('addSubError').textContent = '';
+
+  // Render emoji grid
+  const grid = document.getElementById('addSubEmojiGrid');
+  grid.innerHTML = emojis.map(e =>
+    `<button onclick="selectSubEmoji('${e}')" id="subbtn_${e.codePointAt(0)}"
+       style="font-size:22px;background:${e===_addSubPickedEmoji?'rgba(255,255,255,0.12)':'transparent'};border:1.5px solid ${e===_addSubPickedEmoji?'rgba(255,255,255,0.35)':'transparent'};border-radius:10px;padding:6px;cursor:pointer;transition:background 0.1s;">${e}</button>`
+  ).join('');
+
+  document.getElementById('addSubOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('addSubName').focus(), 350);
 }
 
-function addMeTimeSub() {
-  const name = prompt('New Me Time activity:');
-  if (!name?.trim()) return;
-  const emojis = ['🎮','📚','🎵','🧘','🎨','🏃','🛋️','🎬'];
-  METIME_SUBS.push({ id:'metime_'+Date.now(), name:name.trim(), emoji:emojis[METIME_SUBS.length%emojis.length], color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' });
-  renderMeTimeSub();
-  showToast(`Added "${name.trim()}" to Me Time`);
+function selectSubEmoji(e) {
+  _addSubPickedEmoji = e;
+  document.getElementById('addSubCustomEmoji').value = '';
+  // Re-highlight grid
+  const emojis = _addSubType === 'chores' ? CHORE_EMOJIS : METIME_EMOJIS;
+  emojis.forEach(em => {
+    const btn = document.getElementById('subbtn_'+em.codePointAt(0));
+    if (!btn) return;
+    btn.style.background     = em === e ? 'rgba(255,255,255,0.12)' : 'transparent';
+    btn.style.borderColor    = em === e ? 'rgba(255,255,255,0.35)' : 'transparent';
+  });
+}
+
+function addSubCustomEmojiChanged() {
+  const val = document.getElementById('addSubCustomEmoji').value.trim();
+  if (val) {
+    _addSubPickedEmoji = val;
+    // Deselect grid buttons
+    const emojis = _addSubType === 'chores' ? CHORE_EMOJIS : METIME_EMOJIS;
+    emojis.forEach(em => {
+      const btn = document.getElementById('subbtn_'+em.codePointAt(0));
+      if (btn) { btn.style.background = 'transparent'; btn.style.borderColor = 'transparent'; }
+    });
+  }
+}
+
+function addSubNameChanged() {
+  document.getElementById('addSubError').textContent = '';
+}
+
+function closeAddSubSheet() {
+  document.getElementById('addSubOverlay').classList.remove('open');
+}
+
+async function confirmAddSub() {
+  const name = document.getElementById('addSubName').value.trim();
+  if (!name) { document.getElementById('addSubError').textContent = 'Please enter a name.'; return; }
+  const emoji = _addSubPickedEmoji || '✨';
+
+  if (_addSubType === 'chores') {
+    const sub = { id:'chore_'+Date.now(), name, emoji, color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House' };
+    CHORES.push(sub);
+    renderChoresSub();
+    await saveCustomSubToFirestore(sub, 'chores');
+    showToast(`Added "${name}" to Chores`);
+  } else {
+    const sub = { id:'metime_'+Date.now(), name, emoji, color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' };
+    METIME_SUBS.push(sub);
+    renderMeTimeSub();
+    await saveCustomSubToFirestore(sub, 'metime');
+    showToast(`Added "${name}" to Me Time`);
+  }
+  closeAddSubSheet();
 }
 
 // ════════════════════════════════════════════════
@@ -1281,7 +1442,9 @@ function renderTimeline() {
   });
   const top = Object.entries(totals).sort((a,b) => b[1]-a[1]).slice(0,4).map(([id,m]) => {
     const a = findAct(id);
-    return { name:a?.name||id, time:minsToDur(m), pct:Math.round(m/Math.max(nowM,1)*100)+'%', color:a?.color||'#888' };
+    // Fall back to the stored entry name if the activity definition isn't known yet
+    const entryWithId = log.find(e => e.actId === id);
+    return { name:a?.name || entryWithId?.name || id, time:minsToDur(m), pct:Math.round(m/Math.max(nowM,1)*100)+'%', color:a?.color||'#888' };
   });
   document.getElementById('catSummary').innerHTML = top.map(c => `
     <div class="cat-sum-item">

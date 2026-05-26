@@ -210,7 +210,7 @@
     .tl-gap .tl-block-dur  { color: var(--text3); }
     .tl-gap-add    { font-size: 11px; font-weight: 700; color: #f59e0b; white-space: nowrap; }
     .mini-tl-wrap   { padding: 16px 20px 6px; }
-    .mini-tl-bar    { height: 30px; border-radius: 10px; overflow: hidden; display: flex; }
+    .mini-tl-bar    { height: 30px; border-radius: 10px; overflow: hidden; display: flex; position: relative; }
     .mini-tl-seg    { height: 100%; }
     .mini-tl-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text3); margin-top: 5px; }
     .cat-summary    { display: flex; border-top: 1px solid var(--border); margin: 10px 0 0; padding: 14px 20px 0; }
@@ -227,6 +227,31 @@
     .week-nav    { display: flex; align-items: center; justify-content: space-between; padding: 0 20px 20px; }
     .week-range  { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 5px; cursor: pointer; }
     .sec-title   { font-size: 16px; font-weight: 700; padding: 0 20px 14px; }
+
+    /* ── Range picker sheet options ── */
+    .range-opt { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid rgba(255,255,255,0.06); cursor: pointer; font-size: 15px; color: var(--text2); user-select: none; }
+    .range-opt:last-child { border-bottom: none; }
+    .range-opt.sel { color: var(--text); font-weight: 600; }
+    .range-check { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.25); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .range-opt.sel .range-check { background: var(--accent); border-color: var(--accent); }
+    .range-check-dot { width: 8px; height: 8px; border-radius: 50%; background: white; display: none; }
+    .range-opt.sel .range-check-dot { display: block; }
+    .range-custom-dates { display: none; padding: 14px 0 4px; gap: 10px; flex-direction: column; }
+    .range-custom-dates.show { display: flex; }
+    .range-date-field { display: flex; flex-direction: column; gap: 6px; }
+    .range-date-lbl { font-size: 11px; color: var(--text3); font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; }
+    .range-date-input { background: var(--surface2); border: 1.5px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 12px; font-size: 14px; color: var(--text); font-family: inherit; outline: none; width: 100%; box-sizing: border-box; }
+
+    /* ── Insights stacked timeline ── */
+    .ins-tl-wrap  { padding: 0 20px 100px; }
+    .ins-tl-row   { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+    .ins-tl-lbl   { width: 40px; font-size: 9px; color: var(--text3); text-align: right; flex-shrink: 0; line-height: 1.3; white-space: nowrap; }
+    .ins-tl-lbl.today { color: var(--text); font-weight: 700; }
+    .ins-tl-bar-wrap { flex: 1; position: relative; }
+    .ins-tl-bar   { border-radius: 5px; overflow: hidden; display: flex; background: var(--surface2); }
+    .ins-tl-seg   { height: 100%; flex-shrink: 0; }
+    .ins-tl-hrs   { width: 28px; font-size: 8px; color: var(--text3); flex-shrink: 0; white-space: nowrap; }
+    .ins-tl-axis  { display: flex; justify-content: space-between; padding: 4px 48px 20px; font-size: 8px; color: var(--text3); }
     .cat-bars    { padding: 0 20px 24px; }
     .cat-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
     .cat-bar-ico { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -381,17 +406,37 @@
   <div class="screen" id="s-insights">
     <div class="ins-header"><div class="ins-title">Insights</div></div>
     <div class="week-nav">
-      <div class="week-range" id="insWeekRange">This week
+      <div class="week-range" id="insWeekRange" onclick="openRangeSheet()">This week
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
-      </div>
-      <div class="nav-arrows">
-        <div class="nav-arrow" onclick="insNavPrev()">‹</div>
-        <div class="nav-arrow" onclick="insNavNext()">›</div>
       </div>
     </div>
     <div class="sec-title">Time by category</div>
     <div class="cat-bars" id="catBars"></div>
     <div class="stat-grid" id="statGrid"></div>
+    <div class="sec-title" style="padding-top:8px;">Daily breakdown</div>
+    <div class="ins-tl-wrap" id="insTimeline"></div>
+  </div>
+
+  <!-- ─── Range Picker Sheet ────────── -->
+  <div class="overlay" id="rangeOverlay">
+    <div class="overlay-bg" onclick="closeRangeSheet()"></div>
+    <div class="sheet-panel">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Time range</div>
+      <div id="rangeOpts">
+        <div class="range-opt sel" data-r="thisWeek"  onclick="selectInsRange('thisWeek')"> <span>This week</span>  <div class="range-check"><div class="range-check-dot"></div></div></div>
+        <div class="range-opt"    data-r="last7"      onclick="selectInsRange('last7')">    <span>Last 7 days</span><div class="range-check"><div class="range-check-dot"></div></div></div>
+        <div class="range-opt"    data-r="thisMonth"  onclick="selectInsRange('thisMonth')"><span>This month</span> <div class="range-check"><div class="range-check-dot"></div></div></div>
+        <div class="range-opt"    data-r="last30"     onclick="selectInsRange('last30')">   <span>Last 30 days</span><div class="range-check"><div class="range-check-dot"></div></div></div>
+        <div class="range-opt"    data-r="thisYear"   onclick="selectInsRange('thisYear')"> <span>This year</span>  <div class="range-check"><div class="range-check-dot"></div></div></div>
+        <div class="range-opt"    data-r="lastYear"   onclick="selectInsRange('lastYear')"> <span>Last year</span>  <div class="range-check"><div class="range-check-dot"></div></div></div>
+        <div class="range-opt"    data-r="custom"     onclick="selectInsRange('custom')">   <span>Custom range</span><div class="range-check"><div class="range-check-dot"></div></div></div>
+      </div>
+      <div class="range-custom-dates" id="rangeCustomDates">
+        <div class="range-date-field"><div class="range-date-lbl">From</div><input type="date" class="range-date-input" id="rangeFrom" onchange="applyCustomRange()"></div>
+        <div class="range-date-field"><div class="range-date-lbl">To</div>  <input type="date" class="range-date-input" id="rangeTo"   onchange="applyCustomRange()"></div>
+      </div>
+    </div>
   </div>
 
   <!-- ═══ MORE ══════════════════════════ -->
@@ -648,7 +693,10 @@ let choresOpen   = false;
 let meTimeOpen   = false;
 let editState    = null;
 let viewDate     = new Date();   // date shown in Timeline screen
-let insWeekOff   = 0;            // 0 = this week, -1 = last week, etc.
+let insRange     = 'thisWeek';   // current insights range type
+let insCustomStart = null;       // Date for custom range start
+let insCustomEnd   = null;       // Date for custom range end
+let insEntries   = null;         // null = use live `entries`; populated for long-range queries
 
 // ════════════════════════════════════════════════
 //  FIRESTORE OPERATIONS
@@ -1132,18 +1180,34 @@ async function pickAct(id) {
 //  DAY LOG HELPER  (converts entries to minute-based slots for display)
 // ════════════════════════════════════════════════
 function getLogForDay(targetDate) {
-  const midnight = getMidnight(targetDate);
-  const dayEnd   = new Date(midnight); dayEnd.setHours(23, 59, 59, 999);
+  return getLogForDayFromData(targetDate, entries);
+}
 
-  return entries
-    .filter(e => e.startTime >= midnight && e.startTime <= dayEnd)
+// Data-aware variant — used by renderInsTimeline so long-range insight data
+// (insEntries) is used instead of the 7-day live entries array.
+function getLogForDayFromData(targetDate, dataArray) {
+  const midnight    = getMidnight(targetDate);
+  const nextMidnight = new Date(midnight); nextMidnight.setDate(nextMidnight.getDate() + 1);
+
+  return dataArray
+    // Include any entry that overlaps with the target day.
+    // For active entries (endTime=null), treat "now" as the effective end so they
+    // don't bleed into future days where no time has been tracked yet.
+    .filter(e => {
+      if (e.startTime >= nextMidnight) return false;  // starts after this day
+      const effectiveEnd = e.endTime || new Date();   // active → ends "now"
+      if (effectiveEnd <= midnight) return false;     // ended before this day started
+      return true;
+    })
     .sort((a, b) => a.startTime - b.startTime)
     .map(e => ({
       eid:       e.id,
       actId:     e.actId,
       name:      e.name,
       color:     e.color,
-      startMins: dateToMins(e.startTime, midnight),
+      // Clip startMins to 0 if the entry began before this day's midnight (e.g. sleep carried over)
+      startMins: e.startTime < midnight ? 0 : dateToMins(e.startTime, midnight),
+      // Clip endMins to 1440 if entry runs past this day's midnight into the next
       endMins:   e.endTime ? Math.min(1440, dateToMins(e.endTime, midnight)) : null,
     }));
 }
@@ -1406,6 +1470,14 @@ function renderTimeline() {
     })
     .filter(r => r.mins > 2);
 
+  // "Now" divider — appended after the last entry when viewing today
+  const nowDivider = (isToday && currentEntry) ? `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 2px 4px;pointer-events:none;">
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.12);"></div>
+      <span style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:1.2px;">NOW</span>
+      <div style="flex:1;height:1px;background:rgba(255,255,255,0.12);"></div>
+    </div>` : '';
+
   if (rows.length === 0) {
     document.getElementById('tlRows').innerHTML =
       `<div class="empty-state">No entries for this day yet.<br>Tap a category on the Now tab to start tracking.</div>`;
@@ -1423,16 +1495,20 @@ function renderTimeline() {
           </div>
           ${r.isGap ? `<div class="tl-gap-add">+ Add</div>` : `<div class="tl-block-dur">${r.dur}</div>`}
         </div>
-      </div>`).join('');
+      </div>`).join('') + nowDivider;
   }
 
-  // Mini bar
-  const allS = buildDaySlots(log, 1440);
+  // Mini bar — cap active entry at nowM (not end-of-day), then add future gap
+  const allS = isToday
+    ? [...buildDaySlots(log, nowM), { isGap:true, startMins:nowM, endMins:1440 }]
+    : buildDaySlots(log, 1440);
+  const nowPct = (nowM / 1440 * 100).toFixed(2);
   document.getElementById('miniBar').innerHTML = allS.map(s => {
     const w = ((s.endMins - s.startMins) / 1440 * 100).toFixed(2);
     const c = s.isGap ? (s.startMins < nowM ? '#2a2a3a' : '#1d1f2a') : s.entry.color;
     return `<div class="mini-tl-seg" style="width:${w}%;background:${c};"></div>`;
-  }).join('');
+  }).join('')
+  + (isToday ? `<div style="position:absolute;top:0;bottom:0;left:${nowPct}%;width:2px;background:rgba(255,255,255,0.85);border-radius:1px;pointer-events:none;"></div>` : '');
 
   // Category summary
   const totals = {};
@@ -1454,100 +1530,270 @@ function renderTimeline() {
     </div>`).join('');
 }
 
+
+
 // ════════════════════════════════════════════════
-//  INSIGHTS SCREEN
+//  INSIGHTS RANGE PICKER
 // ════════════════════════════════════════════════
-function getWeekBounds(offset) {
-  const now       = new Date();
-  const dayOfWeek = now.getDay(); // 0 = Sunday
-  const start     = new Date(now);
-  start.setDate(now.getDate() - dayOfWeek + offset * 7);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  end.setHours(23, 59, 59, 999);
-  return { start, end };
+function getInsBounds() {
+  const now  = new Date();
+  const tod  = getMidnight(now);
+  const dow  = now.getDay(); // 0=Sun
+  const M    = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  const eod = d => { const e = new Date(d); e.setHours(23,59,59,999); return e; };
+
+  switch (insRange) {
+    case 'thisWeek': {
+      const s = new Date(tod); s.setDate(tod.getDate() - dow);
+      const e = new Date(s);   e.setDate(s.getDate() + 6);
+      return { start: s, end: eod(e), label: 'This week' };
+    }
+    case 'last7': {
+      const s = new Date(tod); s.setDate(tod.getDate() - 6);
+      return { start: s, end: eod(tod), label: 'Last 7 days' };
+    }
+    case 'thisMonth': {
+      const s = new Date(now.getFullYear(), now.getMonth(), 1);
+      const e = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      return { start: s, end: eod(e), label: `${M[now.getMonth()]} ${now.getFullYear()}` };
+    }
+    case 'last30': {
+      const s = new Date(tod); s.setDate(tod.getDate() - 29);
+      return { start: s, end: eod(tod), label: 'Last 30 days' };
+    }
+    case 'thisYear': {
+      const s = new Date(now.getFullYear(), 0, 1);
+      const e = new Date(now.getFullYear(), 11, 31);
+      return { start: s, end: eod(e), label: `${now.getFullYear()}` };
+    }
+    case 'lastYear': {
+      const y = now.getFullYear() - 1;
+      return { start: new Date(y, 0, 1), end: eod(new Date(y, 11, 31)), label: `${y}` };
+    }
+    case 'custom': {
+      const s = insCustomStart || tod;
+      const e = insCustomEnd   || tod;
+      return { start: s, end: eod(e), label: `${fmtDate(s)} – ${fmtDate(e)}` };
+    }
+    default:
+      return { start: tod, end: eod(tod), label: 'Today' };
+  }
 }
 
-function insNavPrev() { insWeekOff--; renderInsights(); }
-function insNavNext() { if (insWeekOff < 0) { insWeekOff++; renderInsights(); } }
+function openRangeSheet() {
+  // Sync checked state
+  document.querySelectorAll('#rangeOpts .range-opt').forEach(el => {
+    el.classList.toggle('sel', el.dataset.r === insRange);
+  });
+  document.getElementById('rangeCustomDates').classList.toggle('show', insRange === 'custom');
+  document.getElementById('rangeOverlay').classList.add('open');
+}
+
+function closeRangeSheet() {
+  document.getElementById('rangeOverlay').classList.remove('open');
+}
+
+async function selectInsRange(type) {
+  insRange = type;
+  // Update checked UI
+  document.querySelectorAll('#rangeOpts .range-opt').forEach(el => {
+    el.classList.toggle('sel', el.dataset.r === type);
+  });
+  document.getElementById('rangeCustomDates').classList.toggle('show', type === 'custom');
+
+  if (type !== 'custom') {
+    await loadInsightDataIfNeeded();
+    closeRangeSheet();
+    renderInsights();
+  }
+  // For custom, wait for applyCustomRange()
+}
+
+function applyCustomRange() {
+  const fromVal = document.getElementById('rangeFrom').value;
+  const toVal   = document.getElementById('rangeTo').value;
+  if (!fromVal || !toVal) return;
+  insCustomStart = new Date(fromVal + 'T00:00:00');
+  insCustomEnd   = new Date(toVal   + 'T00:00:00');
+  if (insCustomStart > insCustomEnd) return;
+  loadInsightDataIfNeeded().then(() => {
+    closeRangeSheet();
+    renderInsights();
+  });
+}
+
+async function loadInsightDataIfNeeded() {
+  const { start } = getInsBounds();
+  const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  if (start >= sevenDaysAgo) {
+    insEntries = null; // use live entries
+    return;
+  }
+  if (!db) return;
+  try {
+    const snap = await db.collection('entries')
+      .where('startTime', '>=', firebase.firestore.Timestamp.fromDate(start))
+      .orderBy('startTime', 'asc')
+      .get();
+    insEntries = snap.docs.map(doc => {
+      const d = doc.data();
+      return { id: doc.id, actId: d.actId, name: d.name, color: d.color, category: d.category || '',
+               startTime: d.startTime.toDate(), endTime: d.endTime ? d.endTime.toDate() : null };
+    });
+  } catch(e) { console.warn('Insight data load failed:', e); insEntries = null; }
+}
 
 function renderInsights() {
-  const { start, end } = getWeekBounds(insWeekOff);
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-  const rangeLabel = insWeekOff === 0
-    ? 'This week'
-    : `${months[start.getMonth()]} ${start.getDate()} – ${months[end.getMonth()]} ${end.getDate()}`;
+  const { start, end, label } = getInsBounds();
 
   document.getElementById('insWeekRange').innerHTML =
-    `${rangeLabel} <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+    `${label} <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>`;
 
-  const week = entries.filter(e => e.startTime >= start && e.startTime <= end);
+  const allData = insEntries || entries;
+  const period  = allData.filter(e => e.startTime >= start && e.startTime <= end);
 
-  if (week.length === 0) {
+  if (period.length === 0) {
     document.getElementById('catBars').innerHTML =
       `<div class="empty-state">No data yet for this period.<br>Start tracking and your insights will appear here.</div>`;
     document.getElementById('statGrid').innerHTML = '';
+    document.getElementById('insTimeline').innerHTML = '';
     return;
   }
 
-  // Totals by category
+  // Totals by category — use actual durations; active entries count up to now
   const totals = {}; let totalTracked = 0;
-  week.forEach(e => {
+  period.forEach(e => {
     const ms   = (e.endTime ? e.endTime.getTime() : Date.now()) - e.startTime.getTime();
-    const mins = Math.round(ms / 60000);
+    const mins = Math.max(0, Math.round(ms / 60000));
     totals[e.actId] = (totals[e.actId] || 0) + mins;
     totalTracked += mins;
   });
 
-  const sorted = Object.entries(totals).sort((a,b) => b[1]-a[1]);
-  const maxM   = sorted[0]?.[1] || 1;
+  const sorted   = Object.entries(totals).sort((a,b) => b[1]-a[1]);
+  const maxM     = sorted[0]?.[1] || 1;
+  const activeId = currentEntry?.actId;
 
   document.getElementById('catBars').innerHTML = sorted.slice(0,6).map(([id, mins]) => {
-    const act  = findAct(id);
-    const pct  = Math.round(mins / maxM * 100);
-    const ofWk = Math.round(mins / totalTracked * 100);
+    const act      = findAct(id);
+    const pct      = Math.round(mins / maxM * 100);
+    const ofWk     = Math.round(mins / totalTracked * 100);
+    const isActive = id === activeId;
+    const color    = act?.color || '#888';
     return `
       <div class="cat-bar-row">
-        <div class="cat-bar-ico" style="background:${act?.bg||'#1d1f2a'};color:${act?.color||'#888'};">
+        <div class="cat-bar-ico" style="background:${act?.bg||'#1d1f2a'};color:${color};">
           ${act?.iconId ? icon(act.iconId,22) : `<span style="font-size:18px;">${act?.emoji||'⏱'}</span>`}
         </div>
         <div class="cat-bar-info">
           <div class="cat-bar-meta">
-            <span class="cat-bar-name">${act?.name||id}</span>
-            <span class="cat-bar-hours">${minsToDur(mins)} · ${ofWk}%</span>
+            <span class="cat-bar-name" style="display:flex;align-items:center;gap:6px;">
+              ${act?.name||id}
+              ${isActive ? `<span class="pulse-dot" style="width:7px;height:7px;background:${color};--act-glow:rgba(0,0,0,0.3);flex-shrink:0;"></span>` : ''}
+            </span>
+            <span class="cat-bar-hours">${minsToDur(mins)}${isActive ? ' · live' : ` · ${ofWk}%`}</span>
           </div>
-          <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%;background:${act?.color||'#888'};"></div></div>
+          <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%;background:${color};"></div></div>
         </div>
       </div>`;
   }).join('');
 
-  // Stats
-  const dayCount = new Set(week.map(e => e.startTime.toDateString())).size;
-  const avgPerDay = dayCount > 0 ? minsToDur(Math.round(totalTracked / dayCount)) : '—';
+  // Stats — compute total days in range (not just days with data)
+  const totalDays = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+  const daysWithData = new Set(period.map(e => e.startTime.toDateString())).size;
+  const avgPerDay = daysWithData > 0 ? minsToDur(Math.round(totalTracked / daysWithData)) : '—';
 
   document.getElementById('statGrid').innerHTML = `
     <div class="stat-card">
       <div class="stat-card-lbl">⏱ Total tracked</div>
       <div class="stat-card-val">${minsToDur(totalTracked)}</div>
-      <div class="stat-chg">${dayCount} day${dayCount!==1?'s':''} logged</div>
+      <div class="stat-chg">${daysWithData} day${daysWithData!==1?'s':''} logged</div>
     </div>
     <div class="stat-card">
       <div class="stat-card-lbl">🔄 Switches</div>
-      <div class="stat-card-val">${week.length - 1}</div>
-      <div class="stat-chg">across ${week.length} entries</div>
+      <div class="stat-card-val">${period.length > 0 ? period.length - 1 : 0}</div>
+      <div class="stat-chg">across ${period.length} entries</div>
     </div>
     <div class="stat-card">
       <div class="stat-card-lbl">📅 Days active</div>
-      <div class="stat-card-val">${dayCount}</div>
-      <div class="stat-chg">out of 7 this week</div>
+      <div class="stat-card-val">${daysWithData}</div>
+      <div class="stat-chg">out of ${totalDays}</div>
     </div>
     <div class="stat-card">
       <div class="stat-card-lbl">⚡ Avg per day</div>
       <div class="stat-card-val">${avgPerDay}</div>
       <div class="stat-chg">when tracking</div>
     </div>`;
+
+  // ── Stacked daily timeline ──
+  renderInsTimeline(allData, start, end);
+}
+
+function renderInsTimeline(allData, start, end) {
+  const T       = 1440;
+  const now     = new Date();
+  const todayStr = getMidnight(now).toDateString();
+  const nowM    = getNowMins();
+
+  // Determine bar height and label format from range span
+  const totalDays = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+  const barH   = totalDays > 60 ? 11 : totalDays > 14 ? 15 : 19;
+  const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  function dayLabel(d) {
+    if (totalDays <= 14) return `${DAYS[d.getDay()]}<br>${d.getMonth()+1}/${d.getDate()}`;
+    if (totalDays <= 60) return `${d.getMonth()+1}/${d.getDate()}`;
+    // For long ranges, show month name on the 1st of each month, date otherwise
+    return d.getDate() === 1
+      ? `${MONTHS[d.getMonth()]}<br>${d.getDate()}`
+      : `${d.getMonth()+1}/${d.getDate()}`;
+  }
+
+  let html = '';
+  // Walk each day from start → end
+  const cur = getMidnight(start);
+  while (cur <= end) {
+    const isToday   = cur.toDateString() === todayStr;
+    const isFuture  = cur > now;
+    const dayLog    = getLogForDayFromData(cur, allData);
+    const cap       = isToday ? nowM : T;
+    const slots     = isFuture ? [] : buildDaySlots(dayLog, cap);
+    const tracked   = isFuture ? 0  : dayTrackedMins(dayLog);
+
+    // Build bar segments (simplified — no click handlers for insights view)
+    const segs = slots.map(s => {
+      const w = ((s.endMins - s.startMins) / T * 100).toFixed(3);
+      if (s.isGap) {
+        const isPast = !isToday || s.startMins < nowM;
+        return `<div class="ins-tl-seg" style="width:${w}%;background:${isPast ? '#2a2a3a' : '#1d1f2a'};"></div>`;
+      }
+      const barColor = findAct(s.entry.actId)?.color || s.entry.color;
+      return `<div class="ins-tl-seg" style="width:${w}%;background:${barColor};"></div>`;
+    }).join('');
+
+    // For today, add future remainder + now-tick
+    const futureW = isToday ? ((T - nowM) / T * 100).toFixed(3) : 0;
+    const futureSeg = isToday
+      ? `<div class="ins-tl-seg" style="width:${futureW}%;background:#1d1f2a;"></div>` : '';
+    const nowTick = isToday
+      ? `<div style="position:absolute;top:0;bottom:0;left:${(nowM/T*100).toFixed(2)}%;width:2px;background:rgba(255,255,255,0.8);border-radius:1px;pointer-events:none;"></div>` : '';
+
+    html += `
+      <div class="ins-tl-row">
+        <div class="ins-tl-lbl${isToday?' today':''}">${dayLabel(cur)}</div>
+        <div class="ins-tl-bar-wrap">
+          <div class="ins-tl-bar" style="height:${barH}px;">${segs}${futureSeg}</div>
+          ${nowTick}
+        </div>
+        <div class="ins-tl-hrs">${tracked > 0 ? minsToDur(tracked) : ''}</div>
+      </div>`;
+
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  html += `<div class="ins-tl-axis"><span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>12 AM</span></div>`;
+  document.getElementById('insTimeline').innerHTML = html;
 }
 
 // ════════════════════════════════════════════════

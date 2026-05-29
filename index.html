@@ -176,8 +176,8 @@
     .act-name { font-size: 9px; font-weight: 500; color: rgba(255,255,255,0.7); text-align: center; line-height: 1.2; }
 
     /* Sub-rows (Chores & Me Time) */
-    .sub-row { overflow: hidden; max-height: 0; transition: max-height 0.28s ease; }
-    .sub-row.open { max-height: 160px; }
+    .sub-row { overflow: hidden; max-height: 0; transition: max-height 0.35s ease; }
+    .sub-row.open { max-height: 480px; }
     .sub-row-inner { padding-top: 8px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
     .sub-card { border-radius: 12px; padding: 9px 4px 8px; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; border: 1.5px solid transparent; transition: transform 0.12s, border-color 0.18s; user-select: none; }
     .sub-card:active { transform: scale(0.91); }
@@ -289,7 +289,7 @@
     .push-spacer { width: 68px; flex-shrink: 0; }
     .push-section { padding: 20px 20px 6px; font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); }
     .push-rows { padding: 0 20px; }
-    .ma-row { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .ma-row { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s, transform 0.1s; border-radius: 8px; }
     .ma-row:active { opacity: 0.7; }
     .ma-ico { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px; }
     .ma-ico svg { width: 22px; height: 22px; display: block; }
@@ -297,12 +297,29 @@
     .ma-name { font-size: 15px; font-weight: 600; }
     .ma-banner { font-size: 12px; color: var(--text3); margin-top: 1px; }
     .ma-chev { color: var(--text3); }
+    /* ── REORDER MODE ────────────────────────── */
+    .ma-grip { width: 36px; height: 44px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--text3); touch-action: none; cursor: grab; }
+    .ma-grip svg { display: block; }
+    .ma-row.is-dragging { opacity: 0.4; background: rgba(255,255,255,0.04); pointer-events: none; }
+    .ma-row.drag-over { background: rgba(255,255,255,0.06); }
+    #dragGhost { position: fixed; left: 0; right: 0; z-index: 9999; pointer-events: none; background: var(--surface2); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); padding: 0 20px; display: flex; align-items: center; gap: 14px; opacity: 0.95; transform: scale(1.03); }
+    .reorder-btn { background: none; border: none; color: var(--accent); font-size: 15px; font-weight: 600; cursor: pointer; padding: 6px 0; font-family: inherit; flex-shrink: 0; min-width: 64px; text-align: right; }
+    .reorder-hint { font-size: 12px; color: var(--text3); text-align: center; padding: 10px 20px 2px; }
 
     /* ── EDIT ACTIVITY EMOJI GRID ────────── */
     .ea-emoji-grid { display: grid; grid-template-columns: repeat(8,1fr); gap: 6px; margin-bottom: 12px; }
     .ea-emoji-btn { height: 38px; border-radius: 10px; background: var(--surface2); border: 1.5px solid transparent; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s, transform 0.1s; }
     .ea-emoji-btn.sel { border-color: rgba(255,255,255,0.45); }
     .ea-emoji-btn:active { transform: scale(0.88); }
+
+    /* ── EDIT ACTIVITY COLOR PICKER ────────── */
+    .ea-color-grid { display: grid; grid-template-columns: repeat(8,1fr); gap: 5px; margin-bottom: 12px; }
+    .ea-color-swatch { width: 100%; aspect-ratio: 1; border-radius: 8px; border: 2px solid transparent; cursor: pointer; transition: transform 0.1s, border-color 0.15s; box-sizing: border-box; }
+    .ea-color-swatch.sel { border-color: #fff; transform: scale(1.15); }
+    .ea-color-swatch:active { transform: scale(0.9); }
+    .ea-color-preview { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .ea-color-preview-dot { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.15); }
+    .ea-color-preview-label { font-size: 13px; color: var(--text2); }
 
     /* ══════════════════════════════════════
        EDIT / ADD SHEET
@@ -393,15 +410,8 @@
       <div class="switch-label" id="switchLabel">Start tracking</div>
       <div class="act-grid" id="quickGrid"></div>
 
-      <!-- Chores sub-row -->
-      <div class="sub-row" id="choresSub">
-        <div class="sub-row-inner" id="choresSubGrid"></div>
-      </div>
-
-      <!-- Me Time sub-row -->
-      <div class="sub-row" id="meTimeSub">
-        <div class="sub-row-inner" id="meTimeSubGrid"></div>
-      </div>
+      <!-- Sub-rows rendered dynamically per hasSub activity -->
+      <div id="subRowsContainer"></div>
     </div>
   </div>
 
@@ -522,7 +532,7 @@
         Back
       </button>
       <div class="push-title">Manage Activities</div>
-      <div class="push-spacer"></div>
+      <button class="reorder-btn" id="reorderToggleBtn" onclick="toggleReorderMode()">Reorder</button>
     </div>
     <div id="manageActsList"></div>
   </div>
@@ -549,8 +559,36 @@
             oninput="editActCustomEmojiChanged()" />
         </div>
       </div>
+      <!-- Color Picker -->
+      <div id="editActColorSection">
+        <div class="sheet-cat-label">Color</div>
+        <div class="ea-color-preview">
+          <div class="ea-color-preview-dot" id="editActColorDot"></div>
+          <span class="ea-color-preview-label" id="editActColorLabel">Selected color</span>
+        </div>
+        <div id="editActColorGrid" class="ea-color-grid"></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;">
+          <span style="font-size:12px;color:var(--text3);white-space:nowrap;">Custom:</span>
+          <input type="color" id="editActCustomColor" value="#ffffff"
+            style="width:44px;height:32px;border:none;background:none;cursor:pointer;border-radius:8px;padding:0;"
+            oninput="editActCustomColorChanged(this.value)" />
+        </div>
+      </div>
+      <!-- Allow sub-activities toggle (main activities only) -->
+      <div id="editActHasSubRow" style="display:none;align-items:center;justify-content:space-between;margin-bottom:22px;padding:12px 14px;background:var(--surface2);border-radius:12px;">
+        <div>
+          <div style="font-size:15px;font-weight:600;">Allow sub-activities</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;">Tap expands to show children on home screen</div>
+        </div>
+        <label style="position:relative;width:44px;height:26px;flex-shrink:0;">
+          <input type="checkbox" id="editActHasSubToggle" style="opacity:0;width:0;height:0;position:absolute;">
+          <span id="editActHasSubSlider" onclick="toggleHasSubSlider()" style="position:absolute;inset:0;border-radius:13px;background:var(--surface3);cursor:pointer;transition:background 0.2s;">
+            <span style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform 0.2s;display:block;" id="editActHasSubKnob"></span>
+          </span>
+        </label>
+      </div>
       <div id="editActDeleteRow" style="display:none;">
-        <button class="sheet-delete" onclick="deleteActivityItem()">Delete Subcategory</button>
+        <button class="sheet-delete" onclick="deleteActivityItem()">Delete Sub-Activity</button>
       </div>
       <div class="sheet-actions">
         <button class="sheet-btn cancel" onclick="closeEditActivity()">Cancel</button>
@@ -678,15 +716,37 @@ let METIME_SUBS = [
   { id:'meetfriends',  name:'Meet Friends',  bannerName:'Meeting Friends',  emoji:'🤝', color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' },
 ];
 
+// Generic sub-activity map — any activity can have subs keyed by its subKey
+// Legacy keys 'chores' and 'metime' reference the existing arrays
+const SUBS_MAP = { chores: CHORES, metime: METIME_SUBS };
+
+function subsFor(act) {
+  if (!act?.hasSub) return [];
+  return SUBS_MAP[act.subKey] || [];
+}
+
 function allActivities() {
-  return [...ACTS.filter(a => !a.hasSub), ...CHORES, ...METIME_SUBS];
+  const subs = Object.values(SUBS_MAP).flat();
+  return [...ACTS.filter(a => !a.hasSub), ...subs];
 }
 
 function findAct(id) {
-  return ACTS.find(a => a.id === id)
-      || CHORES.find(c => c.id === id)
-      || METIME_SUBS.find(m => m.id === id)
-      || null;
+  const inActs = ACTS.find(a => a.id === id);
+  if (inActs) return inActs;
+  for (const arr of Object.values(SUBS_MAP)) {
+    const found = arr.find(s => s.id === id);
+    if (found) return found;
+  }
+  return null;
+}
+
+// Ensure every hasSub activity has an array in SUBS_MAP
+function ensureSubsMap() {
+  ACTS.forEach(a => {
+    if (a.hasSub && a.subKey && !SUBS_MAP[a.subKey]) {
+      SUBS_MAP[a.subKey] = [];
+    }
+  });
 }
 
 // ════════════════════════════════════════════════
@@ -759,8 +819,6 @@ function dateToInputStr(date) {
 let entries      = [];    // all entries from Firestore (sorted by startTime asc)
 let currentEntry = null;  // the one entry with endTime === null (actively tracking)
 let loading      = true;
-let choresOpen   = false;
-let meTimeOpen   = false;
 let editState    = null;
 let viewDate     = new Date();   // date shown in Timeline screen
 let insRange     = 'thisWeek';   // current insights range type
@@ -901,16 +959,15 @@ async function loadCustomSubs() {
   try {
     const snap = await db.collection('subcategories').orderBy('createdAt', 'asc').get();
     snap.forEach(doc => {
-      const d = doc.data();
+      const d   = doc.data();
       const sub = { id: doc.id, name: d.name, emoji: d.emoji, color: d.color, bg: d.bg, category: d.category };
-      if (d.type === 'chores' && !CHORES.find(c => c.id === doc.id)) {
-        CHORES.push(sub);
-      } else if (d.type === 'metime' && !METIME_SUBS.find(m => m.id === doc.id)) {
-        METIME_SUBS.push(sub);
+      const key = d.type; // e.g. 'chores', 'metime', or any custom parentId
+      if (!SUBS_MAP[key]) SUBS_MAP[key] = [];
+      if (!SUBS_MAP[key].find(s => s.id === doc.id)) {
+        SUBS_MAP[key].push(sub);
       }
     });
-    renderChoresSub();
-    renderMeTimeSub();
+    renderAllSubGrids();
   } catch(e) {
     console.warn('Could not load custom subcategories:', e);
   }
@@ -925,21 +982,23 @@ async function backfillOrphanedSubs() {
     const id = entry.actId;
     if (!id || seen.has(id)) continue;
     seen.add(id);
-    if (id.startsWith('chore_') && !CHORES.find(c => c.id === id)) {
-      const sub = { id, name: entry.name, emoji: '🧹', color: '#10b981', bg: 'rgba(16,185,129,0.22)', category: 'House' };
-      CHORES.push(sub);
-      await saveCustomSubToFirestore(sub, 'chores');
-      changed = true;
-    } else if (id.startsWith('metime_') && !METIME_SUBS.find(m => m.id === id)) {
-      const sub = { id, name: entry.name, emoji: '✨', color: '#06b6d4', bg: 'rgba(6,182,212,0.22)', category: 'Self' };
-      METIME_SUBS.push(sub);
-      await saveCustomSubToFirestore(sub, 'metime');
-      changed = true;
+    if (!findAct(id)) {
+      // Infer parent key from id prefix
+      const key = id.startsWith('chore_') ? 'chores'
+                : id.startsWith('metime_') ? 'metime'
+                : null;
+      if (key) {
+        if (!SUBS_MAP[key]) SUBS_MAP[key] = [];
+        const color = key === 'chores' ? '#10b981' : '#06b6d4';
+        const bg    = colorToBg(color);
+        const sub   = { id, name: entry.name, emoji: key === 'chores' ? '🧹' : '✨', color, bg, category: '' };
+        SUBS_MAP[key].push(sub);
+        await saveCustomSubToFirestore(sub, key);
+        changed = true;
+      }
     }
   }
   if (changed) {
-    renderChoresSub();
-    renderMeTimeSub();
     renderAll();
   }
 }
@@ -977,79 +1036,254 @@ function openManageActivities() {
 }
 
 function closeManageActivities() {
+  if (reorderMode) {
+    reorderMode = false;
+    saveActivityOrder();
+  }
   document.getElementById('manageActsScreen').classList.remove('open');
 }
 
+let reorderMode = false;
+
+function toggleReorderMode() {
+  reorderMode = !reorderMode;
+  const btn = document.getElementById('reorderToggleBtn');
+  if (btn) btn.textContent = reorderMode ? 'Done' : 'Reorder';
+  if (!reorderMode) saveActivityOrder();
+  renderManageActivities();
+}
+
+// ── Grip icon SVG ─────────────────────────────
+const GRIP_SVG = `<svg width="18" height="14" viewBox="0 0 18 14" fill="currentColor">
+  <rect x="0" y="0" width="18" height="2" rx="1"/>
+  <rect x="0" y="6" width="18" height="2" rx="1"/>
+  <rect x="0" y="12" width="18" height="2" rx="1"/>
+</svg>`;
+
+// ── Chevron SVG ───────────────────────────────
+const CHEV_SVG = `<svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 1 6 6 1 11"/></svg>`;
+
 function renderManageActivities() {
   const container = document.getElementById('manageActsList');
+  const hint = reorderMode ? `<div class="reorder-hint">Hold ≡ and drag to reorder</div>` : '';
+  let html = hint + `<div class="push-rows" id="ro-all">`;
 
-  // ── Main activities (no subs) ─────────────────
-  const mainActs = ACTS.filter(a => !a.hasSub);
-  let html = `<div class="push-section">Activities</div><div class="push-rows">`;
-  mainActs.forEach(a => {
-    html += `
-      <div class="ma-row" onclick="openEditActivity('main','${a.id}')">
-        <div class="ma-ico" style="background:${a.bg};color:${a.color};">${icon(a.iconId,22)}</div>
+  ACTS.forEach(a => {
+    const actIco = `<div style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:${a.bg};color:${a.color};">${icon(a.iconId,22)}</div>`;
+    const subs   = subsFor(a);
+
+    // ── Parent row ────────────────────────────────
+    html += `<div class="act-block" data-id="${a.id}">`;
+    if (reorderMode) {
+      html += `<div class="ma-row" data-id="${a.id}" data-section="main" style="cursor:default;">
+        <div class="ma-ico">${actIco}</div>
         <div class="ma-info">
-          <div class="ma-name">${a.name}</div>
+          <div class="ma-name">${a.name}${a.hasSub ? ' <span style="font-size:10px;color:var(--text3);">▾ subs</span>' : ''}</div>
           <div class="ma-banner">Active: "${a.bannerName}"</div>
         </div>
-        <div class="ma-chev"><svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 1 6 6 1 11"/></svg></div>
+        <div class="ma-grip" data-grip="1" ontouchstart="gripTouchStart(event)">${GRIP_SVG}</div>
       </div>`;
-  });
-  html += `</div>`;
-
-  // ── Chores parent + subcategories ─────────────
-  const choresAct = ACTS.find(a => a.id === 'chores');
-  html += `<div class="push-section">Chores</div><div class="push-rows">`;
-  html += `
-    <div class="ma-row" onclick="openEditActivity('main','chores')">
-      <div class="ma-ico" style="background:${choresAct.bg};color:${choresAct.color};">${icon(choresAct.iconId,22)}</div>
-      <div class="ma-info">
-        <div class="ma-name">${choresAct.name} <span style="font-size:11px;color:var(--text3);font-weight:400;">parent</span></div>
-        <div class="ma-banner">Active: "${choresAct.bannerName}"</div>
-      </div>
-      <div class="ma-chev"><svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 1 6 6 1 11"/></svg></div>
-    </div>`;
-  CHORES.forEach(c => {
-    html += `
-      <div class="ma-row" onclick="openEditActivity('chore','${c.id}')">
-        <div class="ma-ico" style="background:${c.bg};color:${c.color};font-size:20px;">${c.emoji}</div>
+    } else {
+      html += `<div class="ma-row" onclick="openEditActivity('main','${a.id}')">
+        <div class="ma-ico">${actIco}</div>
         <div class="ma-info">
-          <div class="ma-name">${c.name}</div>
-          <div class="ma-banner">Active: "${c.bannerName}"</div>
+          <div class="ma-name">${a.name}${a.hasSub ? ' <span style="font-size:10px;color:var(--text3);">▾ subs</span>' : ''}</div>
+          <div class="ma-banner">Active: "${a.bannerName}"</div>
         </div>
-        <div class="ma-chev"><svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 1 6 6 1 11"/></svg></div>
+        <div class="ma-chev">${CHEV_SVG}</div>
       </div>`;
-  });
-  html += `</div>`;
+    }
 
-  // ── Me Time parent + subcategories ────────────
-  const meAct = ACTS.find(a => a.id === 'metime');
-  html += `<div class="push-section">Me Time</div><div class="push-rows">`;
-  html += `
-    <div class="ma-row" onclick="openEditActivity('main','metime')">
-      <div class="ma-ico" style="background:${meAct.bg};color:${meAct.color};">${icon(meAct.iconId,22)}</div>
-      <div class="ma-info">
-        <div class="ma-name">${meAct.name} <span style="font-size:11px;color:var(--text3);font-weight:400;">parent</span></div>
-        <div class="ma-banner">Active: "${meAct.bannerName}"</div>
-      </div>
-      <div class="ma-chev"><svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 1 6 6 1 11"/></svg></div>
-    </div>`;
-  METIME_SUBS.forEach(m => {
-    html += `
-      <div class="ma-row" onclick="openEditActivity('metime','${m.id}')">
-        <div class="ma-ico" style="background:${m.bg};color:${m.color};font-size:20px;">${m.emoji}</div>
-        <div class="ma-info">
-          <div class="ma-name">${m.name}</div>
-          <div class="ma-banner">Active: "${m.bannerName}"</div>
-        </div>
-        <div class="ma-chev"><svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 1 6 6 1 11"/></svg></div>
-      </div>`;
-  });
-  html += `</div>`;
+    // ── Sub-rows (indented) ────────────────────────
+    if (a.hasSub) {
+      html += `<div id="ro-${a.subKey}" style="padding-left:28px;border-left:2px solid ${a.color}33;margin-left:20px;margin-bottom:4px;">`;
+      subs.forEach(s => {
+        const subIco = `<div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:${s.bg};color:${s.color};font-size:18px;">${s.emoji||'•'}</div>`;
+        if (reorderMode) {
+          html += `<div class="ma-row" data-id="${s.id}" data-section="${a.subKey}" style="cursor:default;padding:10px 0;">
+            <div class="ma-ico" style="width:36px;height:36px;">${subIco}</div>
+            <div class="ma-info"><div class="ma-name" style="font-size:14px;">${s.name}</div></div>
+            <div class="ma-grip" data-grip="1" ontouchstart="gripTouchStart(event)">${GRIP_SVG}</div>
+          </div>`;
+        } else {
+          html += `<div class="ma-row" onclick="openEditActivity('${a.subKey}','${s.id}')" style="padding:10px 0;">
+            <div class="ma-ico" style="width:36px;height:36px;">${subIco}</div>
+            <div class="ma-info"><div class="ma-name" style="font-size:14px;">${s.name}</div></div>
+            <div class="ma-chev">${CHEV_SVG}</div>
+          </div>`;
+        }
+      });
+      if (!reorderMode) {
+        html += `<div class="ma-row" onclick="openAddSubSheet('${a.subKey}')" style="padding:10px 0;opacity:0.6;">
+          <div class="ma-ico" style="width:36px;height:36px;border-radius:10px;border:1.5px dashed rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text3);">＋</div>
+          <div class="ma-info"><div class="ma-name" style="font-size:13px;color:var(--text3);">Add sub-activity</div></div>
+        </div>`;
+      }
+      html += `</div>`;
+    }
 
+    html += `</div>`; // close act-block
+  });
+
+  html += `</div><div style="height:40px;"></div>`;
   container.innerHTML = html;
+}
+
+// ════════════════════════════════════════════════
+//  TOUCH DRAG-TO-REORDER
+// ════════════════════════════════════════════════
+let _td = {
+  active: false,
+  el: null,      // DOM element being dragged (.act-block for main, .ma-row for subs)
+  section: null, // 'main' or a subKey string
+  ghost: null,
+  ghostH: 0,
+};
+
+function gripTouchStart(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const grip    = e.currentTarget;
+  const row     = grip.closest('.ma-row');
+  if (!row) return;
+  const section = row.dataset.section;
+
+  // For main activities, drag the entire .act-block; for subs, drag just the row
+  const dragEl = section === 'main' ? row.closest('.act-block') || row : row;
+  const rect   = dragEl.getBoundingClientRect();
+  const touch  = e.touches[0];
+
+  const ghost = document.createElement('div');
+  ghost.id = 'dragGhost';
+  // Ghost shows just the first .ma-row content regardless of section
+  ghost.innerHTML = row.innerHTML;
+  ghost.style.top    = rect.top + 'px';
+  ghost.style.height = row.getBoundingClientRect().height + 'px';
+  document.body.appendChild(ghost);
+
+  dragEl.classList.add('is-dragging');
+
+  _td = { active: true, el: dragEl, section, ghost, ghostH: rect.height };
+
+  document.addEventListener('touchmove', _tdMove, { passive: false });
+  document.addEventListener('touchend',  _tdEnd,  { passive: false });
+}
+
+function _tdMove(e) {
+  if (!_td.active) return;
+  e.preventDefault();
+  const y = e.touches[0].clientY;
+
+  _td.ghost.style.top = (y - 30) + 'px';
+
+  const contId   = _td.section === 'main' ? 'ro-all' : `ro-${_td.section}`;
+  const container = document.getElementById(contId);
+  if (!container) return;
+
+  // Direct children to shuffle around
+  const childSelector = _td.section === 'main' ? '.act-block:not(.is-dragging)' : '.ma-row:not(.is-dragging)';
+  const siblings = Array.from(container.querySelectorAll(`:scope > ${childSelector}`));
+
+  let inserted = false;
+  for (const sib of siblings) {
+    const r = sib.getBoundingClientRect();
+    if (y < r.top + r.height / 2) {
+      container.insertBefore(_td.el, sib);
+      inserted = true;
+      break;
+    }
+  }
+  if (!inserted) container.appendChild(_td.el);
+}
+
+function _tdEnd(e) {
+  if (!_td.active) return;
+  _td.active = false;
+
+  _td.ghost.remove();
+  _td.el.classList.remove('is-dragging');
+
+  document.removeEventListener('touchmove', _tdMove);
+  document.removeEventListener('touchend',  _tdEnd);
+
+  if (_td.section === 'main') {
+    // Read new block order from #ro-all
+    const container = document.getElementById('ro-all');
+    if (!container) return;
+    const newIds = Array.from(container.querySelectorAll(':scope > .act-block')).map(b => b.dataset.id);
+    const map = {};
+    ACTS.forEach(a => { map[a.id] = a; });
+    const sorted = newIds.map(id => map[id]).filter(Boolean);
+    // Append any not in the DOM order (shouldn't happen, but safety)
+    ACTS.forEach(a => { if (!sorted.find(s => s.id === a.id)) sorted.push(a); });
+    ACTS.length = 0;
+    sorted.forEach(a => ACTS.push(a));
+  } else {
+    const contId  = `ro-${_td.section}`;
+    const container = document.getElementById(contId);
+    if (!container) return;
+    // Only read .ma-row elements that have data-id (not the "add" row)
+    const newIds = Array.from(container.querySelectorAll(':scope > .ma-row[data-id]')).map(r => r.dataset.id);
+    const arr = SUBS_MAP[_td.section];
+    if (arr) {
+      const sorted = newIds.map(id => arr.find(s => s.id === id)).filter(Boolean);
+      arr.length = 0;
+      sorted.forEach(s => arr.push(s));
+    }
+  }
+
+  renderQuickGrid();
+}
+
+// ════════════════════════════════════════════════
+//  ACTIVITY ORDER — LOAD / SAVE
+// ════════════════════════════════════════════════
+async function saveActivityOrder() {
+  if (!db) return;
+  try {
+    const subsOrder = {};
+    Object.entries(SUBS_MAP).forEach(([k, arr]) => { subsOrder[k] = arr.map(s => s.id); });
+    await db.collection('settings').doc('activityOrder').set({
+      mainOrder: ACTS.map(a => a.id),
+      subsOrder,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch(e) { console.warn('Could not save activity order:', e); }
+}
+
+async function loadActivityOrder() {
+  if (!db) return;
+  try {
+    const snap = await db.collection('settings').doc('activityOrder').get();
+    if (!snap.exists) return;
+    const d = snap.data();
+
+    if (d.mainOrder?.length) {
+      const map = {};
+      ACTS.forEach(a => map[a.id] = a);
+      const sorted = d.mainOrder.map(id => map[id]).filter(Boolean);
+      ACTS.forEach(a => { if (!sorted.find(s => s.id === a.id)) sorted.push(a); });
+      ACTS.length = 0;
+      sorted.forEach(a => ACTS.push(a));
+    }
+
+    // Generic sub order
+    const subsOrder = d.subsOrder || {};
+    // Legacy: migrate old choresOrder/metimeOrder fields
+    if (!subsOrder.chores && d.choresOrder) subsOrder.chores = d.choresOrder;
+    if (!subsOrder.metime && d.metimeOrder) subsOrder.metime = d.metimeOrder;
+
+    Object.entries(subsOrder).forEach(([key, ids]) => {
+      const arr = SUBS_MAP[key];
+      if (!arr || !ids?.length) return;
+      const map = {};
+      arr.forEach(s => map[s.id] = s);
+      const sorted = ids.map(id => map[id]).filter(Boolean);
+      arr.forEach(s => { if (!sorted.find(x => x.id === s.id)) sorted.push(s); });
+      arr.length = 0;
+      sorted.forEach(s => arr.push(s));
+    });
+  } catch(e) { console.warn('Could not load activity order:', e); }
 }
 
 // ════════════════════════════════════════════════
@@ -1058,38 +1292,65 @@ function renderManageActivities() {
 let _editActType = null; // 'main' | 'chore' | 'metime'
 let _editActId   = null;
 let _editActEmoji = null;
+let _editActColor = null;
 
 const ALL_EDIT_EMOJIS = ['🧹','🪣','🔧','💡','🪟','🛁','🧴','🫧','🧺','🪴','🧻','🍳','🧊','🛒','🪑','🔑','🚿','🗑️','🪞','🖼️','🎮','📚','🎵','🧘','🎨','🏃','🛋️','🎬','🎸','🎯','🏋️','🧩','🎲','🚴','✏️','🎤','🍵','🎻','🌄','🏊','⚽','🤝','🏃','🍕','☕','🎭','📷','🌿','🌊','🧗'];
+
+// Color palette: 8 hue columns × 5 shade rows (light → dark)
+const COLOR_PALETTE = [
+  // Red         Orange      Amber       Yellow      Lime        Green       Emerald     Cyan
+  ['#fca5a5', '#fdba74', '#fcd34d', '#fef08a', '#bef264', '#86efac', '#6ee7b7', '#a5f3fc'],
+  ['#f87171', '#fb923c', '#fbbf24', '#facc15', '#a3e635', '#4ade80', '#34d399', '#22d3ee'],
+  ['#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981', '#06b6d4'],
+  ['#dc2626', '#ea580c', '#d97706', '#ca8a04', '#65a30d', '#16a34a', '#059669', '#0891b2'],
+  ['#991b1b', '#9a3412', '#92400e', '#854d0e', '#3f6212', '#166534', '#065f46', '#164e63'],
+  // Sky         Blue        Indigo      Violet      Purple      Fuchsia     Pink        Rose
+  ['#bae6fd', '#bfdbfe', '#c7d2fe', '#ddd6fe', '#e9d5ff', '#f5d0fe', '#fbcfe8', '#fecdd3'],
+  ['#38bdf8', '#60a5fa', '#818cf8', '#a78bfa', '#c084fc', '#e879f9', '#f472b6', '#fb7185'],
+  ['#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e'],
+  ['#0369a1', '#1d4ed8', '#4338ca', '#6d28d9', '#7e22ce', '#a21caf', '#be185d', '#be123c'],
+  ['#0c4a6e', '#1e3a8a', '#312e81', '#4c1d95', '#581c87', '#701a75', '#9d174d', '#881337'],
+];
 
 function openEditActivity(type, id) {
   _editActType = type;
   _editActId   = id;
 
-  let act;
-  if (type === 'main')   act = ACTS.find(a => a.id === id);
-  if (type === 'chore')  act = CHORES.find(c => c.id === id);
-  if (type === 'metime') act = METIME_SUBS.find(m => m.id === id);
+  // type === 'main' for top-level activities, anything else = subKey
+  const act = type === 'main' ? ACTS.find(a => a.id === id) : findAct(id);
   if (!act) return;
 
+  const isSub = (type !== 'main');
+
   _editActEmoji = act.emoji || null;
+  _editActColor = act.color || '#f97316';
 
   document.getElementById('editActTitle').textContent = `Edit "${act.name}"`;
   document.getElementById('editActName').value   = act.name;
-  document.getElementById('editActBanner').value = act.bannerName;
+  document.getElementById('editActBanner').value = act.bannerName || '';
 
-  // Emoji section — only for subcategories
+  // Emoji section — only for sub-activities
   const emojiSection = document.getElementById('editActEmojiSection');
-  if (type === 'main') {
-    emojiSection.style.display = 'none';
-  } else {
-    emojiSection.style.display = 'block';
+  emojiSection.style.display = isSub ? 'block' : 'none';
+  if (isSub) {
     _editActEmoji = act.emoji;
     document.getElementById('editActCustomEmoji').value = '';
     renderEditEmojiGrid();
   }
 
-  // Delete button — only for subcategories
-  document.getElementById('editActDeleteRow').style.display = (type !== 'main') ? 'block' : 'none';
+  // Color picker — always shown
+  document.getElementById('editActCustomColor').value = _editActColor;
+  renderEditColorGrid();
+
+  // hasSub toggle — only for main activities
+  const hasSubRow = document.getElementById('editActHasSubRow');
+  if (hasSubRow) {
+    hasSubRow.style.display = isSub ? 'none' : 'flex';
+    syncHasSubToggle(act.hasSub);
+  }
+
+  // Delete button — only for sub-activities
+  document.getElementById('editActDeleteRow').style.display = isSub ? 'block' : 'none';
 
   document.getElementById('editActOverlay').classList.add('open');
 }
@@ -1116,36 +1377,133 @@ function editActCustomEmojiChanged() {
   }
 }
 
+function renderEditColorGrid() {
+  const grid = document.getElementById('editActColorGrid');
+  grid.innerHTML = COLOR_PALETTE.map(row =>
+    row.map(hex =>
+      `<div class="ea-color-swatch${hex === _editActColor ? ' sel' : ''}"
+            style="background:${hex};"
+            onclick="pickEditColor('${hex}')"></div>`
+    ).join('')
+  ).join('');
+  updateColorPreview();
+}
+
+function pickEditColor(hex) {
+  _editActColor = hex;
+  document.getElementById('editActCustomColor').value = hex;
+  renderEditColorGrid();
+}
+
+function editActCustomColorChanged(hex) {
+  _editActColor = hex;
+  // deselect palette swatches
+  document.querySelectorAll('.ea-color-swatch').forEach(s => s.classList.remove('sel'));
+  updateColorPreview();
+}
+
+function updateColorPreview() {
+  const dot = document.getElementById('editActColorDot');
+  const label = document.getElementById('editActColorLabel');
+  if (dot) dot.style.background = _editActColor;
+  if (label) label.textContent = _editActColor;
+}
+
+function colorToBg(hex) {
+  // Convert hex color to a semi-transparent background version
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},0.22)`;
+}
+
+function toggleHasSubSlider() {
+  const cb  = document.getElementById('editActHasSubToggle');
+  const knob = document.getElementById('editActHasSubKnob');
+  const slider = document.getElementById('editActHasSubSlider');
+  cb.checked = !cb.checked;
+  slider.style.background = cb.checked ? 'var(--accent)' : 'var(--surface3)';
+  knob.style.transform = cb.checked ? 'translateX(18px)' : 'translateX(0)';
+}
+
+// Sync toggle visual on open
+function syncHasSubToggle(val) {
+  const cb = document.getElementById('editActHasSubToggle');
+  const knob = document.getElementById('editActHasSubKnob');
+  const slider = document.getElementById('editActHasSubSlider');
+  if (!cb) return;
+  cb.checked = !!val;
+  if (slider) slider.style.background = val ? 'var(--accent)' : 'var(--surface3)';
+  if (knob)   knob.style.transform    = val ? 'translateX(18px)' : 'translateX(0)';
+}
+
 function closeEditActivity() {
   document.getElementById('editActOverlay').classList.remove('open');
 }
 
 async function saveActivityEdit() {
-  const name      = document.getElementById('editActName').value.trim();
+  const name       = document.getElementById('editActName').value.trim();
   const bannerName = document.getElementById('editActBanner').value.trim();
   if (!name || !bannerName) { showToast('Name and active label are required'); return; }
 
-  const type = _editActType;
-  const id   = _editActId;
+  const type   = _editActType;
+  const id     = _editActId;
+  const isSub  = (type !== 'main');
+  const color  = _editActColor || '#f97316';
+  const bg     = colorToBg(color);
+  const hasSub = !isSub && (document.getElementById('editActHasSubToggle')?.checked || false);
 
-  // Update in-memory arrays
-  if (type === 'main') {
-    const act = ACTS.find(a => a.id === id);
-    if (act) { act.name = name; act.bannerName = bannerName; }
-  } else if (type === 'chore') {
-    const act = CHORES.find(c => c.id === id);
-    if (act) { act.name = name; act.bannerName = bannerName; if (_editActEmoji) act.emoji = _editActEmoji; }
-  } else if (type === 'metime') {
-    const act = METIME_SUBS.find(m => m.id === id);
-    if (act) { act.name = name; act.bannerName = bannerName; if (_editActEmoji) act.emoji = _editActEmoji; }
+  // Update in-memory
+  const act = isSub ? findAct(id) : ACTS.find(a => a.id === id);
+  if (act) {
+    act.name       = name;
+    act.bannerName = bannerName;
+    act.color      = color;
+    act.bg         = bg;
+    if (isSub && _editActEmoji) act.emoji = _editActEmoji;
+    if (!isSub) {
+      const wasHasSub = act.hasSub;
+      act.hasSub = hasSub;
+      if (hasSub && !act.subKey) {
+        act.subKey = id; // use the activity's own id as the sub key
+      }
+      if (hasSub && !SUBS_MAP[act.subKey]) {
+        SUBS_MAP[act.subKey] = [];
+      }
+      // If disabling subs, clear subKey only if no subs exist
+      if (!hasSub && wasHasSub) {
+        const arr = SUBS_MAP[act.subKey];
+        if (arr && arr.length === 0) {
+          delete SUBS_MAP[act.subKey];
+          act.subKey = undefined;
+        }
+      }
+    }
   }
 
   // Persist to Firestore
   if (db) {
     try {
-      const payload = { type, name, bannerName, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-      if (type !== 'main' && _editActEmoji) payload.emoji = _editActEmoji;
+      const payload = { type, name, bannerName, color, bg, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+      if (!isSub) { payload.hasSub = hasSub; if (hasSub && act?.subKey) payload.subKey = act.subKey; }
+      if (isSub && _editActEmoji) payload.emoji = _editActEmoji;
       await db.collection('activity_overrides').doc(id).set(payload, { merge: true });
+
+      // Also update the subcategories collection for subs so emoji+color persist
+      if (isSub) {
+        const subPayload = { name, color, bg, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+        if (_editActEmoji) subPayload.emoji = _editActEmoji;
+        await db.collection('subcategories').doc(id).set(subPayload, { merge: true });
+      }
+
+      // Batch-update historical entries color+name
+      const eSnap = await db.collection('entries').where('actId', '==', id).get();
+      if (!eSnap.empty) {
+        const batch = db.batch();
+        eSnap.docs.forEach(doc => batch.update(doc.ref, { color, name }));
+        await batch.commit();
+        entries.forEach(e => { if (e.actId === id) { e.color = color; e.name = name; } });
+      }
     } catch(e) { console.warn('Could not save activity override:', e); }
   }
 
@@ -1158,24 +1516,26 @@ async function saveActivityEdit() {
 async function deleteActivityItem() {
   const type = _editActType;
   const id   = _editActId;
-  if (type === 'main') return; // safety
+  if (type === 'main') return; // safety — can't delete top-level
 
-  // Remove from in-memory array
-  if (type === 'chore')  CHORES     = CHORES.filter(c => c.id !== id);
-  if (type === 'metime') METIME_SUBS = METIME_SUBS.filter(m => m.id !== id);
+  // Remove from SUBS_MAP — type is the subKey
+  const arr = SUBS_MAP[type];
+  if (arr) {
+    const idx = arr.findIndex(s => s.id === id);
+    if (idx > -1) arr.splice(idx, 1);
+  }
 
-  // Remove from Firestore (subcategories + overrides)
   if (db) {
     try {
       await db.collection('subcategories').doc(id).delete();
       await db.collection('activity_overrides').doc(id).delete();
-    } catch(e) { console.warn('Could not delete subcategory:', e); }
+    } catch(e) { console.warn('Could not delete sub-activity:', e); }
   }
 
   closeEditActivity();
   renderAll();
   renderManageActivities();
-  showToast('Subcategory deleted');
+  showToast('Sub-activity deleted');
 }
 
 // ════════════════════════════════════════════════
@@ -1186,30 +1546,29 @@ async function loadActivityOverrides() {
   try {
     const snap = await db.collection('activity_overrides').get();
     snap.docs.forEach(doc => {
-      const d = doc.data();
+      const d  = doc.data();
       const id = doc.id;
       if (d.type === 'main') {
         const act = ACTS.find(a => a.id === id);
         if (act) {
-          if (d.name)       act.name       = d.name;
-          if (d.bannerName) act.bannerName = d.bannerName;
+          if (d.name)                    act.name       = d.name;
+          if (d.bannerName)              act.bannerName = d.bannerName;
+          if (d.color)                   { act.color    = d.color; act.bg = d.bg || colorToBg(d.color); }
+          if (d.hasSub !== undefined)    act.hasSub     = d.hasSub;
+          if (d.subKey)                  act.subKey     = d.subKey;
         }
-      } else if (d.type === 'chore') {
-        const act = CHORES.find(c => c.id === id);
+      } else {
+        // Sub-activity — find in any SUBS_MAP array
+        const act = findAct(id);
         if (act) {
           if (d.name)       act.name       = d.name;
           if (d.bannerName) act.bannerName = d.bannerName;
           if (d.emoji)      act.emoji      = d.emoji;
-        }
-      } else if (d.type === 'metime') {
-        const act = METIME_SUBS.find(m => m.id === id);
-        if (act) {
-          if (d.name)       act.name       = d.name;
-          if (d.bannerName) act.bannerName = d.bannerName;
-          if (d.emoji)      act.emoji      = d.emoji;
+          if (d.color)      { act.color    = d.color; act.bg = d.bg || colorToBg(d.color); }
         }
       }
     });
+    ensureSubsMap();
   } catch(e) { console.warn('Could not load activity overrides:', e); }
 }
 
@@ -1218,9 +1577,7 @@ async function loadActivityOverrides() {
 // ════════════════════════════════════════════════
 function renderAll() {
   renderNowHero();
-  renderQuickGrid();
-  renderChoresSub();
-  renderMeTimeSub();
+  renderQuickGrid();   // also calls renderAllSubGrids internally
   renderMultiDayBars();
   renderTimeline();
   renderInsights();
@@ -1229,9 +1586,13 @@ function renderAll() {
 function init() {
   renderMore();
   if (CONFIGURED) {
-    loadActivityOverrides().then(() => {
-      loadCustomSubs();
-      listenToEntries();
+    // Load order: custom subs → overrides → activity order → live data
+    loadCustomSubs().then(() => {
+      loadActivityOverrides().then(() => {
+        loadActivityOrder().then(() => {
+          listenToEntries();
+        });
+      });
     });
   } else {
     loading = false;
@@ -1338,23 +1699,21 @@ function renderNowHero() {
 // ════════════════════════════════════════════════
 //  ACTIVITY GRID
 // ════════════════════════════════════════════════
+let openSubKey = null;  // which parent's sub-row is currently expanded
+
 function renderQuickGrid() {
-  const curId    = currentEntry?.actId;
-  const isChore  = CHORES.some(c => c.id === curId);
-  const isMeTime = METIME_SUBS.some(m => m.id === curId);
+  const curId = currentEntry?.actId;
 
   document.getElementById('quickGrid').innerHTML = ACTS.map(a => {
-    const active   = a.id === curId
-                  || (a.subKey === 'chores'  && isChore)
-                  || (a.subKey === 'metime'  && isMeTime);
-    const expanded = (a.subKey === 'chores' && choresOpen)
-                  || (a.subKey === 'metime' && meTimeOpen);
+    const subs     = subsFor(a);
+    const isActive = a.id === curId || (a.hasSub && subs.some(s => s.id === curId));
+    const expanded = a.hasSub && a.subKey === openSubKey;
 
     const onclickFn = a.hasSub
-      ? (a.subKey === 'chores' ? 'toggleChores()' : 'toggleMeTime()')
+      ? `toggleSubRow('${a.subKey}')`
       : `pickAct('${a.id}')`;
 
-    return `<div class="act-card ${active?'is-active':''} ${a.hasSub?'has-sub':''} ${expanded?'expanded':''}"
+    return `<div class="act-card ${isActive?'is-active':''} ${a.hasSub?'has-sub':''} ${expanded?'expanded':''}"
                  style="background:${a.bg}; color:${a.color};"
                  onclick="${onclickFn}">
       <div class="act-icon">${icon(a.iconId, 36)}</div>
@@ -1362,79 +1721,77 @@ function renderQuickGrid() {
       ${a.hasSub ? '<div class="act-chev">▾</div>' : ''}
     </div>`;
   }).join('');
+
+  renderAllSubGrids();
 }
 
-function renderChoresSub() {
+function renderAllSubGrids() {
+  const container = document.getElementById('subRowsContainer');
+  if (!container) return;
   const curId = currentEntry?.actId;
-  const cards = CHORES.map(c =>
-    `<div class="sub-card ${c.id===curId?'is-active':''}"
-          style="background:${c.bg}; color:${c.color};"
-          onclick="pickAct('${c.id}')">
-       <div class="sub-icon">${c.emoji}</div>
-       <div class="sub-name">${c.name}</div>
-     </div>`).join('');
-  document.getElementById('choresSubGrid').innerHTML = cards +
-    `<div class="add-sub-btn" onclick="addChore()">
-       <div style="font-size:18px;color:var(--text3);">＋</div>
-       <div style="font-size:8px;color:var(--text3);">Add</div>
-     </div>`;
+
+  container.innerHTML = ACTS.filter(a => a.hasSub).map(a => {
+    const subs = subsFor(a);
+    const isOpen = a.subKey === openSubKey;
+    const cards = subs.map(s =>
+      `<div class="sub-card ${s.id===curId?'is-active':''}"
+            style="background:${s.bg}; color:${s.color};"
+            onclick="pickAct('${s.id}')">
+         <div class="sub-icon">${s.emoji || '•'}</div>
+         <div class="sub-name">${s.name}</div>
+       </div>`).join('');
+    return `<div class="sub-row${isOpen?' open':''}" id="subrow_${a.subKey}">
+      <div class="sub-row-inner">
+        ${cards}
+        <div class="add-sub-btn" onclick="openAddSubSheet('${a.subKey}')">
+          <div style="font-size:18px;color:var(--text3);">＋</div>
+          <div style="font-size:8px;color:var(--text3);">Add</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-function renderMeTimeSub() {
-  const curId = currentEntry?.actId;
-  const cards = METIME_SUBS.map(m =>
-    `<div class="sub-card ${m.id===curId?'is-active':''}"
-          style="background:${m.bg}; color:${m.color};"
-          onclick="pickAct('${m.id}')">
-       <div class="sub-icon">${m.emoji}</div>
-       <div class="sub-name">${m.name}</div>
-     </div>`).join('');
-  document.getElementById('meTimeSubGrid').innerHTML = cards +
-    `<div class="add-sub-btn" onclick="addMeTimeSub()">
-       <div style="font-size:18px;color:var(--text3);">＋</div>
-       <div style="font-size:8px;color:var(--text3);">Add</div>
-     </div>`;
-}
-
-function toggleChores() {
-  choresOpen = !choresOpen;
-  if (choresOpen) { meTimeOpen = false; document.getElementById('meTimeSub').classList.remove('open'); }
-  document.getElementById('choresSub').classList.toggle('open', choresOpen);
+function toggleSubRow(subKey) {
+  openSubKey = openSubKey === subKey ? null : subKey;
   renderQuickGrid();
 }
 
-function toggleMeTime() {
-  meTimeOpen = !meTimeOpen;
-  if (meTimeOpen) { choresOpen = false; document.getElementById('choresSub').classList.remove('open'); }
-  document.getElementById('meTimeSub').classList.toggle('open', meTimeOpen);
-  renderQuickGrid();
-}
+// Keep legacy aliases so any old references still work
+function renderChoresSub()  { renderAllSubGrids(); }
+function renderMeTimeSub()  { renderAllSubGrids(); }
+function toggleChores()     { toggleSubRow('chores'); }
+function toggleMeTime()     { toggleSubRow('metime'); }
 
 // ════════════════════════════════════════════════
 //  ADD SUBCATEGORY SHEET
 // ════════════════════════════════════════════════
-const CHORE_EMOJIS  = ['🧹','🪣','🔧','💡','🪟','🛁','🧴','🫧','🧺','🪴','🧻','🍳','🧊','🛒','🪑','🔑','🚿','🗑️','🪞','🖼️'];
-const METIME_EMOJIS = ['🎮','📚','🎵','🧘','🎨','🏃','🛋️','🎬','🎸','🎯','🏋️','🧩','🎲','🚴','✏️','🎤','🍵','🎻','🌄','🏊'];
+// Combined emoji set for any sub-activity type
+const ALL_SUB_EMOJIS = ['🧹','🪣','🔧','💡','🪟','🛁','🧴','🫧','🧺','🪴','🧻','🍳','🧊','🛒','🪑','🔑','🚿','🗑️','🪞','🖼️','🎮','📚','🎵','🧘','🎨','🏃','🛋️','🎬','🎸','🎯','🏋️','🧩','🎲','🚴','✏️','🎤','🍵','🎻','🌄','🏊','⚽','🤝','🍕','☕','🎭','📷','🌿','🌊'];
 
-let _addSubType       = 'chores'; // 'chores' | 'metime'
+// Legacy aliases
+const CHORE_EMOJIS  = ALL_SUB_EMOJIS;
+const METIME_EMOJIS = ALL_SUB_EMOJIS;
+
+let _addSubType       = 'chores';
 let _addSubPickedEmoji = '';
 
-function addChore() { openAddSubSheet('chores'); }
+function addChore()     { openAddSubSheet('chores'); }
 function addMeTimeSub() { openAddSubSheet('metime'); }
 
-function openAddSubSheet(type) {
-  _addSubType = type;
-  const emojis = type === 'chores' ? CHORE_EMOJIS : METIME_EMOJIS;
-  _addSubPickedEmoji = emojis[0];
+function openAddSubSheet(subKey) {
+  _addSubType = subKey;
+  _addSubPickedEmoji = ALL_SUB_EMOJIS[0];
 
-  document.getElementById('addSubTitle').textContent = type === 'chores' ? 'New Chore' : 'New Me Time Activity';
+  // Find parent activity name for the title
+  const parent = ACTS.find(a => a.subKey === subKey);
+  document.getElementById('addSubTitle').textContent = parent ? `Add to ${parent.name}` : 'New Sub-Activity';
   document.getElementById('addSubName').value = '';
   document.getElementById('addSubCustomEmoji').value = '';
   document.getElementById('addSubError').textContent = '';
 
-  // Render emoji grid
   const grid = document.getElementById('addSubEmojiGrid');
-  grid.innerHTML = emojis.map(e =>
+  grid.innerHTML = ALL_SUB_EMOJIS.map(e =>
     `<button onclick="selectSubEmoji('${e}')" id="subbtn_${e.codePointAt(0)}"
        style="font-size:22px;background:${e===_addSubPickedEmoji?'rgba(255,255,255,0.12)':'transparent'};border:1.5px solid ${e===_addSubPickedEmoji?'rgba(255,255,255,0.35)':'transparent'};border-radius:10px;padding:6px;cursor:pointer;transition:background 0.1s;">${e}</button>`
   ).join('');
@@ -1446,13 +1803,11 @@ function openAddSubSheet(type) {
 function selectSubEmoji(e) {
   _addSubPickedEmoji = e;
   document.getElementById('addSubCustomEmoji').value = '';
-  // Re-highlight grid
-  const emojis = _addSubType === 'chores' ? CHORE_EMOJIS : METIME_EMOJIS;
-  emojis.forEach(em => {
+  ALL_SUB_EMOJIS.forEach(em => {
     const btn = document.getElementById('subbtn_'+em.codePointAt(0));
     if (!btn) return;
-    btn.style.background     = em === e ? 'rgba(255,255,255,0.12)' : 'transparent';
-    btn.style.borderColor    = em === e ? 'rgba(255,255,255,0.35)' : 'transparent';
+    btn.style.background  = em === e ? 'rgba(255,255,255,0.12)' : 'transparent';
+    btn.style.borderColor = em === e ? 'rgba(255,255,255,0.35)' : 'transparent';
   });
 }
 
@@ -1460,9 +1815,7 @@ function addSubCustomEmojiChanged() {
   const val = document.getElementById('addSubCustomEmoji').value.trim();
   if (val) {
     _addSubPickedEmoji = val;
-    // Deselect grid buttons
-    const emojis = _addSubType === 'chores' ? CHORE_EMOJIS : METIME_EMOJIS;
-    emojis.forEach(em => {
+    ALL_SUB_EMOJIS.forEach(em => {
       const btn = document.getElementById('subbtn_'+em.codePointAt(0));
       if (btn) { btn.style.background = 'transparent'; btn.style.borderColor = 'transparent'; }
     });
@@ -1481,20 +1834,22 @@ async function confirmAddSub() {
   const name = document.getElementById('addSubName').value.trim();
   if (!name) { document.getElementById('addSubError').textContent = 'Please enter a name.'; return; }
   const emoji = _addSubPickedEmoji || '✨';
+  const key   = _addSubType;
 
-  if (_addSubType === 'chores') {
-    const sub = { id:'chore_'+Date.now(), name, emoji, color:'#10b981', bg:'rgba(16,185,129,0.22)', category:'House' };
-    CHORES.push(sub);
-    renderChoresSub();
-    await saveCustomSubToFirestore(sub, 'chores');
-    showToast(`Added "${name}" to Chores`);
-  } else {
-    const sub = { id:'metime_'+Date.now(), name, emoji, color:'#06b6d4', bg:'rgba(6,182,212,0.22)', category:'Self' };
-    METIME_SUBS.push(sub);
-    renderMeTimeSub();
-    await saveCustomSubToFirestore(sub, 'metime');
-    showToast(`Added "${name}" to Me Time`);
-  }
+  // Find the parent's color for the new sub's default color
+  const parent = ACTS.find(a => a.subKey === key);
+  const color  = parent?.color || '#f97316';
+  const bg     = colorToBg(color);
+
+  const sub = { id: key + '_' + Date.now(), name, emoji, color, bg, category: parent?.category || '' };
+
+  if (!SUBS_MAP[key]) SUBS_MAP[key] = [];
+  SUBS_MAP[key].push(sub);
+
+  renderQuickGrid();
+  renderManageActivities();
+  await saveCustomSubToFirestore(sub, key);
+  showToast(`Added "${name}"`);
   closeAddSubSheet();
 }
 
@@ -1506,9 +1861,11 @@ async function pickAct(id) {
   if (!next) return;
   if (currentEntry && id === currentEntry.actId) return; // already tracking this
 
-  // Close sub-rows that don't match
-  if (!CHORES.find(c => c.id === id))     { choresOpen = false; document.getElementById('choresSub').classList.remove('open'); }
-  if (!METIME_SUBS.find(m => m.id === id)) { meTimeOpen = false; document.getElementById('meTimeSub').classList.remove('open'); }
+  // Close any open sub-row when picking a non-sub activity
+  if (openSubKey) {
+    const arr = SUBS_MAP[openSubKey];
+    if (!arr || !arr.find(s => s.id === id)) openSubKey = null;
+  }
 
   showToast(`Starting ${next.name}…`);
   try {

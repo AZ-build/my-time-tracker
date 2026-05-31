@@ -79,18 +79,21 @@
 
     /* Stop button */
     .stop-btn {
-      margin-top: 10px;
-      padding: 7px 22px;
-      background: rgba(248,113,113,0.12);
-      border: 1.5px solid rgba(248,113,113,0.28);
-      border-radius: 20px;
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 14px 22px;
+      background: rgba(248,113,113,0.10);
+      border: 1.5px solid rgba(248,113,113,0.25);
+      border-radius: 14px;
       color: #f87171;
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       font-family: inherit;
       letter-spacing: 0.2px;
       transition: background 0.15s;
+      box-sizing: border-box;
     }
     .stop-btn:active { background: rgba(248,113,113,0.22); }
 
@@ -103,6 +106,21 @@
       animation: spin 0.9s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Retry button (shown on load timeout) */
+    .retry-btn {
+      margin-top: 14px;
+      padding: 10px 24px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 999px;
+      color: var(--text1);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .retry-btn:active { background: rgba(255,255,255,0.16); }
 
     /* ══════════════════════════════════════
        MULTI-DAY BARS
@@ -140,10 +158,9 @@
     }
     .now-tick::after { content: '▲'; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); font-size: 6px; color: rgba(255,255,255,0.5); }
 
-    .day-row-hrs { width: 28px; font-size: 8px; color: var(--text3); text-align: left; flex-shrink: 0; white-space: nowrap; }
-    .day-row.is-today .day-row-hrs { color: var(--text2); font-size: 9px; }
+    .day-row-hrs { display: none; }
 
-    .day-axis { display: flex; justify-content: space-between; padding: 5px 44px 0; font-size: 8px; color: var(--text3); }
+    .day-axis { display: flex; justify-content: space-between; padding: 5px 4px 0 44px; font-size: 8px; color: var(--text3); }
 
     /* Gap CTA */
     .gap-cta { display: flex; align-items: center; gap: 8px; margin: 10px 20px 0; padding: 9px 14px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.22); border-radius: 10px; cursor: pointer; transition: background 0.15s; }
@@ -170,6 +187,7 @@
     .act-card.is-active { border-color: rgba(255,255,255,0.4); }
     .act-card.has-sub .act-chev { position: absolute; bottom: 5px; right: 6px; font-size: 8px; color: rgba(255,255,255,0.35); transition: transform 0.2s; }
     .act-card.expanded .act-chev { transform: rotate(180deg); }
+    .back-card { background: var(--surface2); color: var(--text2); }
 
     .act-icon { line-height: 1; }
     .act-icon svg { width: 36px; height: 36px; display: block; }
@@ -207,7 +225,11 @@
     .tl-connectors.shown path { opacity: 0.5; }
 
     /* The to-scale colored ribbon (absolute segments) */
-    .tl-ribbon { position: absolute; top: 0; left: 0; width: 22px; }
+    .tl-ribbon { position: absolute; top: 0; left: 36px; width: 22px; }
+    .tl-hour-mark { position: absolute; left: 0; right: 0; display: flex; align-items: center; pointer-events: none; z-index: 0; transform: translateY(-50%); }
+    .tl-hour-label { width: 34px; flex-shrink: 0; text-align: right; font-size: 9px; color: rgba(255,255,255,0.2); line-height: 1; white-space: nowrap; }
+    .tl-hour-spacer { width: 24px; flex-shrink: 0; }
+    .tl-hour-line { flex: 1; height: 1px; background: rgba(255,255,255,0.06); }
     .tl-seg { position: absolute; left: 0; width: 100%; border-radius: 3px; cursor: pointer;
               transition: filter 0.12s, transform 0.12s; transform-origin: left center; }
     .tl-seg:active { filter: brightness(1.3); transform: scaleX(1.25); }
@@ -218,30 +240,28 @@
 
     /* Right-side log cards (normal flow, readable) */
     .tl-cards { margin-left: 84px; }
-    .tl-card { border-radius: 13px; padding: 9px 13px; margin-bottom: 7px; position: relative; z-index: 2;
-               display: flex; flex-direction: column; gap: 3px; cursor: pointer; min-height: 50px;
-               justify-content: center; border: 1px solid; overflow: hidden;
+    .tl-card { border-radius: 9px; padding: 5px 9px 5px 11px; margin-bottom: 4px; position: relative; z-index: 2;
+               display: flex; align-items: center; cursor: pointer; min-height: 28px;
+               border: 1px solid; overflow: hidden;
                transition: transform 0.12s, filter 0.15s; box-sizing: border-box;
-               animation: vtlIn 0.4s cubic-bezier(.2,.8,.2,1) both; }
-    @keyframes vtlIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+               animation: vtlIn 0.35s cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes vtlIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
     .tl-card:active { transform: scale(0.985); filter: brightness(1.15); }
     .tl-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--seg-color); }
-    .tl-card-top { display: flex; align-items: center; gap: 9px; min-width: 0; }
-    .tl-card-icon { display: flex; flex-shrink: 0; }
-    .tl-card-icon svg { width: 17px; height: 17px; display: block; }
-    .tl-card-name { font-size: 14px; font-weight: 650; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
-    .tl-card-meta { display: flex; align-items: center; gap: 6px; font-size: 11px; color: rgba(255,255,255,0.6); padding-left: 26px; }
-    .tl-card-meta .dur { font-weight: 600; color: rgba(255,255,255,0.85); }
-    .tl-card-live .tl-card-name { }
-    .tl-live-badge { font-size: 9px; font-weight: 800; letter-spacing: 0.5px; color: #fff;
-                     background: var(--seg-color); padding: 2px 6px; border-radius: 5px; flex-shrink: 0; }
+    /* Single-row card content */
+    .tl-card-row { display: flex; align-items: baseline; gap: 5px; min-width: 0; flex: 1; }
+    .tl-card-name { font-size: 12px; font-weight: 650; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+    .tl-card-dur  { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.85); flex-shrink: 0; white-space: nowrap; }
+    .tl-card-time { font-size: 10px; color: rgba(255,255,255,0.42); flex-shrink: 0; white-space: nowrap; }
+    .tl-live-badge { font-size: 8px; font-weight: 800; letter-spacing: 0.4px; color: #fff;
+                     background: var(--seg-color); padding: 1px 5px; border-radius: 4px; flex-shrink: 0; }
     /* gap "fill" card */
     .tl-card-gap { background: rgba(245,158,11,0.06); border: 1px dashed rgba(245,158,11,0.32); }
     .tl-card-gap::before { display: none; }
-    .tl-card-gap .tl-card-name { color: #f59e0b; font-weight: 600; font-size: 13px; }
-    .tl-card-gap .tl-card-meta { padding-left: 0; color: rgba(245,158,11,0.65); }
-    .tl-fill-btn { font-size: 11px; font-weight: 800; color: #f59e0b; background: rgba(245,158,11,0.14);
-                   padding: 3px 9px; border-radius: 7px; flex-shrink: 0; }
+    .tl-card-gap .tl-card-name { color: #f59e0b; font-weight: 600; }
+    .tl-card-gap .tl-card-time { color: rgba(245,158,11,0.55); }
+    .tl-fill-btn { font-size: 10px; font-weight: 800; color: #f59e0b; background: rgba(245,158,11,0.14);
+                   padding: 2px 7px; border-radius: 5px; flex-shrink: 0; }
     .tl-card-gap:active { filter: brightness(1.2); transform: scale(0.985); }
 
     /* ── Doughnut chart ── */
@@ -299,8 +319,8 @@
     .ins-tl-bar-wrap { flex: 1; position: relative; }
     .ins-tl-bar   { border-radius: 5px; overflow: hidden; display: flex; background: var(--surface2); }
     .ins-tl-seg   { height: 100%; flex-shrink: 0; }
-    .ins-tl-hrs   { width: 28px; font-size: 8px; color: var(--text3); flex-shrink: 0; white-space: nowrap; }
-    .ins-tl-axis  { display: flex; justify-content: space-between; padding: 4px 48px 20px; font-size: 8px; color: var(--text3); }
+    .ins-tl-hrs   { display: none; }
+    .ins-tl-axis  { display: flex; justify-content: space-between; padding: 4px 4px 20px 48px; font-size: 8px; color: var(--text3); }
 
     /* ── Insights donut section ── */
     .ins-donut-section { padding: 0 20px 4px; }
@@ -481,7 +501,6 @@
       <div class="now-category" id="nowCategory"></div>
       <div class="timer-big" id="timerDisplay"></div>
       <div class="now-started" id="startedAtRow" style="display:none;">Started at <span id="startedAt">—</span></div>
-      <button class="stop-btn" id="stopBtn" onclick="stopTracking()" style="display:none;">⏹ Stop Tracking</button>
     </div>
 
     <div class="multi-day-section" id="multiDaySection"></div>
@@ -493,6 +512,7 @@
 
       <!-- Sub-rows rendered dynamically per hasSub activity -->
       <div id="subRowsContainer"></div>
+      <button class="stop-btn" id="stopBtn" onclick="stopTracking()" style="display:none;">⏹ Stop Tracking</button>
     </div>
   </div>
 
@@ -528,7 +548,7 @@
       </div>
     </div>
     <div class="week-nav">
-      <div class="week-range" id="insWeekRange" onclick="openRangeSheet()">This week
+      <div class="week-range" id="insWeekRange" onclick="openRangeSheet()">Last 7 days
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
     </div>
@@ -567,8 +587,8 @@
       <div class="sheet-handle"></div>
       <div class="sheet-title">Time range</div>
       <div id="rangeOpts">
-        <div class="range-opt sel" data-r="thisWeek"  onclick="selectInsRange('thisWeek')"> <span>This week</span>  <div class="range-check"><div class="range-check-dot"></div></div></div>
-        <div class="range-opt"    data-r="last7"      onclick="selectInsRange('last7')">    <span>Last 7 days</span><div class="range-check"><div class="range-check-dot"></div></div></div>
+        <div class="range-opt"    data-r="thisWeek"  onclick="selectInsRange('thisWeek')"> <span>This week</span>  <div class="range-check"><div class="range-check-dot"></div></div></div>
+        <div class="range-opt sel" data-r="last7"      onclick="selectInsRange('last7')">    <span>Last 7 days</span><div class="range-check"><div class="range-check-dot"></div></div></div>
         <div class="range-opt"    data-r="thisMonth"  onclick="selectInsRange('thisMonth')"><span>This month</span> <div class="range-check"><div class="range-check-dot"></div></div></div>
         <div class="range-opt"    data-r="last30"     onclick="selectInsRange('last30')">   <span>Last 30 days</span><div class="range-check"><div class="range-check-dot"></div></div></div>
         <div class="range-opt"    data-r="thisYear"   onclick="selectInsRange('thisYear')"> <span>This year</span>  <div class="range-check"><div class="range-check-dot"></div></div></div>
@@ -927,9 +947,11 @@ function dateToInputStr(date) {
 let entries      = [];    // all entries from Firestore (sorted by startTime asc)
 let currentEntry = null;  // the one entry with endTime === null (actively tracking)
 let loading      = true;
+let loadTimedOut = false;  // true if Firestore didn't respond within the timeout
+let _firestoreUnsub = null; // unsubscribe handle for the active onSnapshot listener
 let editState    = null;
 let viewDate     = new Date();   // date shown in Timeline screen
-let insRange     = 'thisWeek';   // current insights range type
+let insRange     = 'last7';      // current insights range type
 let insCustomStart = null;       // Date for custom range start
 let insCustomEnd   = null;       // Date for custom range end
 let insEntries   = null;         // null = use live `entries`; populated for long-range queries
@@ -948,13 +970,30 @@ let _sheetIsAdd   = false;       // true when adding a new entry (not editing)
 function listenToEntries() {
   if (!db) return;
 
+  // Unsubscribe any previous listener (e.g. on retry)
+  if (_firestoreUnsub) { _firestoreUnsub(); _firestoreUnsub = null; }
+
+  loading = true;
+  loadTimedOut = false;
+
+  // If Firestore doesn't respond within 10 seconds, show the retry UI
+  const timeoutId = setTimeout(() => {
+    if (loading) {
+      loadTimedOut = true;
+      loading = false;
+      renderAll();
+    }
+  }, 10000);
+
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-  db.collection('entries')
+  _firestoreUnsub = db.collection('entries')
     .where('startTime', '>=', firebase.firestore.Timestamp.fromDate(sevenDaysAgo))
     .orderBy('startTime', 'asc')
     .onSnapshot(snapshot => {
+      clearTimeout(timeoutId);
+      loadTimedOut = false;
       entries = snapshot.docs.map(doc => {
         const d = doc.data();
         return {
@@ -972,10 +1011,18 @@ function listenToEntries() {
       renderAll();
       backfillOrphanedSubs();
     }, err => {
+      clearTimeout(timeoutId);
       console.error('Firestore error:', err);
+      loadTimedOut = true;
       loading = false;
       renderAll();
     });
+}
+
+// Retry Firestore connection (called from retry button)
+function retryConnection() {
+  listenToEntries();
+  renderAll();
 }
 
 // Start a new activity (ending the current one if there is one)
@@ -1808,6 +1855,23 @@ function renderNowHero() {
     return;
   }
 
+  if (loadTimedOut) {
+    iconEl.innerHTML = `<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>`;
+    iconEl.style.filter = '';
+    iconEl.style.color  = '';
+    nameEl.textContent  = 'Connection timed out';
+    nameEl.style.color  = 'var(--text2)';
+    catEl.innerHTML     = 'Check your signal, then tap Retry<br><button class="retry-btn" onclick="retryConnection()">↺ Retry</button>';
+    catEl.style.color   = 'var(--text3)';
+    catEl.style.opacity = '1';
+    timerEl.innerHTML   = '';
+    pulseDot.style.display     = 'none';
+    startedAtRow.style.display = 'none';
+    stopBtn.style.display      = 'none';
+    hero.style.background      = '';
+    return;
+  }
+
   if (!currentEntry) {
     // ── Idle state ──────────────────────
     hero.style.background = '';
@@ -1860,69 +1924,80 @@ function renderNowHero() {
 // ════════════════════════════════════════════════
 //  ACTIVITY GRID
 // ════════════════════════════════════════════════
-let openSubKey = null;  // which parent's sub-row is currently expanded
+let activeSubKey = null;  // which parent activity is drilled into (null = main grid)
 
 function renderQuickGrid() {
   const curId = currentEntry?.actId;
+  const grid  = document.getElementById('quickGrid');
 
-  document.getElementById('quickGrid').innerHTML = ACTS.map(a => {
-    const subs     = subsFor(a);
-    const isActive = a.id === curId || (a.hasSub && subs.some(s => s.id === curId));
-    const expanded = a.hasSub && a.subKey === openSubKey;
+  if (activeSubKey) {
+    // Drill-down: back button in slot 0, then sub-activity tiles
+    const parent = ACTS.find(a => a.subKey === activeSubKey);
+    const subs   = subsFor(parent);
 
-    const onclickFn = a.hasSub
-      ? `toggleSubRow('${a.subKey}')`
-      : `pickAct('${a.id}')`;
-
-    return `<div class="act-card ${isActive?'is-active':''} ${a.hasSub?'has-sub':''} ${expanded?'expanded':''}"
-                 style="background:${a.bg}; color:${a.color};"
-                 onclick="${onclickFn}">
-      <div class="act-icon">${icon(a.iconId, 36)}</div>
-      <div class="act-name">${a.name}</div>
-      ${a.hasSub ? '<div class="act-chev">▾</div>' : ''}
+    const backCard = `<div class="act-card back-card" onclick="backFromSub()">
+      <div class="act-icon"><span style="font-size:26px;line-height:1;">←</span></div>
+      <div class="act-name">Back</div>
     </div>`;
-  }).join('');
 
-  renderAllSubGrids();
-}
-
-function renderAllSubGrids() {
-  const container = document.getElementById('subRowsContainer');
-  if (!container) return;
-  const curId = currentEntry?.actId;
-
-  container.innerHTML = ACTS.filter(a => a.hasSub).map(a => {
-    const subs = subsFor(a);
-    const isOpen = a.subKey === openSubKey;
-    const cards = subs.map(s =>
-      `<div class="sub-card ${s.id===curId?'is-active':''}"
+    const subCards = subs.map(s =>
+      `<div class="act-card ${s.id===curId?'is-active':''}"
             style="background:${s.bg}; color:${s.color};"
             onclick="pickAct('${s.id}')">
-         <div class="sub-icon">${s.emoji || '•'}</div>
-         <div class="sub-name">${s.name}</div>
-       </div>`).join('');
-    return `<div class="sub-row${isOpen?' open':''}" id="subrow_${a.subKey}">
-      <div class="sub-row-inner">
-        ${cards}
-        <div class="add-sub-btn" onclick="openAddSubSheet('${a.subKey}')">
-          <div style="font-size:18px;color:var(--text3);">＋</div>
-          <div style="font-size:8px;color:var(--text3);">Add</div>
-        </div>
-      </div>
+        <div class="act-icon"><span style="font-size:28px;line-height:1;">${s.emoji || '•'}</span></div>
+        <div class="act-name">${s.name}</div>
+      </div>`).join('');
+
+    const addCard = `<div class="act-card" style="background:var(--surface2);border:1.5px dashed rgba(255,255,255,0.13);" onclick="openAddSubSheet('${activeSubKey}')">
+      <div class="act-icon"><span style="font-size:26px;line-height:1;color:var(--text3);">＋</span></div>
+      <div class="act-name" style="color:var(--text3);">Add</div>
     </div>`;
-  }).join('');
+
+    grid.innerHTML = backCard + subCards + addCard;
+  } else {
+    // Main grid: top-level activities; hasSub ones drill in on tap
+    grid.innerHTML = ACTS.map(a => {
+      const subs     = subsFor(a);
+      const isActive = a.id === curId || (a.hasSub && subs.some(s => s.id === curId));
+
+      const onclickFn = a.hasSub
+        ? `drillIntoSub('${a.subKey}')`
+        : `pickAct('${a.id}')`;
+
+      return `<div class="act-card ${isActive?'is-active':''} ${a.hasSub?'has-sub':''}"
+                   style="background:${a.bg}; color:${a.color};"
+                   onclick="${onclickFn}">
+        <div class="act-icon">${icon(a.iconId, 36)}</div>
+        <div class="act-name">${a.name}</div>
+        ${a.hasSub ? '<div class="act-chev">▾</div>' : ''}
+      </div>`;
+    }).join('');
+  }
+
+  // Sub-rows container no longer used; clear for compatibility
+  const container = document.getElementById('subRowsContainer');
+  if (container) container.innerHTML = '';
 }
 
-function toggleSubRow(subKey) {
-  openSubKey = openSubKey === subKey ? null : subKey;
+function renderAllSubGrids() { /* no-op — drill-down replaces inline sub-rows */ }
+
+function drillIntoSub(subKey) {
+  activeSubKey = subKey;
   renderQuickGrid();
 }
 
+function backFromSub() {
+  activeSubKey = null;
+  renderQuickGrid();
+}
+
+function toggleSubRow(subKey) { drillIntoSub(subKey); }  // legacy
+
 // Keep legacy aliases so any old references still work
-function renderChoresSub()  { renderAllSubGrids(); }
-function renderMeTimeSub()  { renderAllSubGrids(); }
-function toggleChores()     { toggleSubRow('chores'); }
-function toggleMeTime()     { toggleSubRow('metime'); }
+function renderChoresSub()  { /* no-op */ }
+function renderMeTimeSub()  { /* no-op */ }
+function toggleChores()     { drillIntoSub('chores'); }
+function toggleMeTime()     { drillIntoSub('metime'); }
 
 // ════════════════════════════════════════════════
 //  ADD SUBCATEGORY SHEET
@@ -2022,11 +2097,8 @@ async function pickAct(id) {
   if (!next) return;
   if (currentEntry && id === currentEntry.actId) return; // already tracking this
 
-  // Close any open sub-row when picking a non-sub activity
-  if (openSubKey) {
-    const arr = SUBS_MAP[openSubKey];
-    if (!arr || !arr.find(s => s.id === id)) openSubKey = null;
-  }
+  // Return to main grid after selecting any activity
+  activeSubKey = null;
 
   showToast(`Starting ${next.name}…`);
   try {
@@ -2145,11 +2217,6 @@ function renderMultiDayBars() {
       ? `<div class="now-tick" style="left:${(nowM / T * 100).toFixed(2)}%;"></div>`
       : '';
 
-    const totalMins = log.reduce((s, e) => s + ((e.endMins ?? cap) - e.startMins), 0);
-    const hrsLabel  = totalMins >= 60
-      ? `${(totalMins/60).toFixed(1)}h`
-      : totalMins > 0 ? `${totalMins}m` : '';
-
     const lbl = isToday ? 'Today' : dayNames[d.getDay()];
     return `
       <div class="day-row${isToday ? ' is-today' : ''}">
@@ -2158,7 +2225,6 @@ function renderMultiDayBars() {
           <div class="day-row-bar">${segs}</div>
           ${nowTickHtml}
         </div>
-        <div class="day-row-hrs">${hrsLabel}</div>
       </div>`;
   }).join('');
 
@@ -2231,20 +2297,16 @@ function renderTimeline() {
       cardsHTML += `
         <div class="tl-card tl-card-gap" data-eid="${gid}" style="${delay}"
           onclick="openAddSheet(${s.startMins},${s.endMins ?? cap},${midnight.getTime()})">
-          <div class="tl-card-top">
-            <div class="tl-card-name">Untracked time</div>
+          <div class="tl-card-row">
+            <span class="tl-card-name">Untracked</span>
             <span class="tl-fill-btn">+ Fill</span>
+            <span class="tl-card-time">${startTime}–${endTime} · ${dur}</span>
           </div>
-          <div class="tl-card-meta">${startTime} – ${endTime} · ${dur}</div>
         </div>`;
       cardIdx++;
       return;
     }
     const e        = s.entry;
-    const act      = findAct(e.actId);
-    const iconEl   = act?.iconId
-      ? `<div class="tl-card-icon">${icon(act.iconId, 17)}</div>`
-      : `<div class="tl-card-icon" style="font-size:15px;">${act?.emoji || '?'}</div>`;
     const isActive = !e.endMins && isToday;
     ribbonHTML += `<div class="tl-seg${isActive ? ' tl-seg-live' : ''}" data-eid="${e.eid}" data-color="${e.color}"
       style="top:${top.toFixed(1)}px;height:${h.toFixed(1)}px;background:${e.color};--seg-glow:${e.color}88;"
@@ -2253,21 +2315,39 @@ function renderTimeline() {
       <div class="tl-card${isActive ? ' tl-card-live' : ''}" data-eid="${e.eid}"
         style="--seg-color:${e.color};background:${e.color}1f;border-color:${e.color}40;${delay}"
         onclick="openEditSheet('${e.eid}',${midnight.getTime()})">
-        <div class="tl-card-top">${iconEl}<div class="tl-card-name">${e.name}</div>${isActive ? '<span class="tl-live-badge">LIVE</span>' : `<span class="dur" style="font-size:12px;color:rgba(255,255,255,0.85);">${dur}</span>`}</div>
-        <div class="tl-card-meta">${startTime} – ${isActive ? 'now' : endTime}${isActive ? ' · in progress' : ''}</div>
+        <div class="tl-card-row">
+          <span class="tl-card-name">${e.name}</span>
+          ${isActive
+            ? `<span class="tl-live-badge">LIVE</span><span class="tl-card-time">${startTime}–now</span>`
+            : `<span class="tl-card-dur">${dur}</span><span class="tl-card-time">${startTime}–${endTime}</span>`
+          }
+        </div>
       </div>`;
     cardIdx++;
   });
 
+  // Build hour markers for the time range visible on the ribbon
+  let hourHTML = '';
+  const firstHourNum = Math.ceil(firstStart / 60);
+  const lastHourNum  = Math.floor(lastEnd  / 60);
+  for (let h = firstHourNum; h <= lastHourNum; h++) {
+    const hMins = h * 60;
+    if (hMins < firstStart || hMins > lastEnd) continue;
+    const top   = ((hMins - firstStart) * PXPM).toFixed(1);
+    const label = h === 0 || h === 24 ? '12am' : h < 12 ? `${h}am` : h === 12 ? '12pm' : `${h-12}pm`;
+    hourHTML += `<div class="tl-hour-mark" style="top:${top}px;"><span class="tl-hour-label">${label}</span><div class="tl-hour-spacer"></div><div class="tl-hour-line"></div></div>`;
+  }
+
   rowsEl.innerHTML = `
     <div class="tl-scale-wrap" id="tlScaleWrap" style="min-height:${ribbonPx.toFixed(0)}px;">
       <svg class="tl-connectors" id="tlConnectors"></svg>
+      ${hourHTML}
       <div class="tl-ribbon" id="tlRibbon" style="height:${ribbonPx.toFixed(0)}px;">${ribbonHTML}</div>
       <div class="tl-cards" id="tlCards">${cardsHTML}</div>
     </div>`;
 
-  // Draw leader lines from each card to its ribbon segment (after layout).
-  requestAnimationFrame(() => drawTimelineConnectors());
+  // Position cards centered on their ribbon segments, then draw connectors.
+  requestAnimationFrame(() => positionTimelineCards());
 
   // ── Doughnut: share of the day per task ──
   const totals = {};
@@ -2277,6 +2357,76 @@ function renderTimeline() {
     totals[e.actId].mins += dur;
   });
   renderDayDonut(Object.values(totals).sort((a, b) => b.mins - a.mins));
+}
+
+// Position each card so its vertical center aligns with its ribbon segment's center.
+function positionTimelineCards() {
+  const wrap     = document.getElementById('tlScaleWrap');
+  const cardsEl  = document.getElementById('tlCards');
+  const ribbonEl = document.getElementById('tlRibbon');
+  if (!wrap || !cardsEl || !ribbonEl) return;
+
+  const cards = Array.from(cardsEl.querySelectorAll('.tl-card[data-eid]'));
+  if (!cards.length) { drawTimelineConnectors(); return; }
+
+  // Read natural heights before switching layout model.
+  const cardHeights = cards.map(c => c.getBoundingClientRect().height || 30);
+
+  // Switch container to absolute so we can place each card precisely.
+  cardsEl.style.position = 'absolute';
+  cardsEl.style.top      = '0';
+  cardsEl.style.left     = '84px';
+  cardsEl.style.right    = '0';
+  cardsEl.style.marginLeft = '0';
+
+  const ribbonH  = parseFloat(ribbonEl.style.height) || 0;
+  const CARD_GAP = 3;
+  const tops     = [];
+
+  // Calculate each card's ideal centered position (unconstrained).
+  const ideals = cards.map((card, i) => {
+    const eid  = card.getAttribute('data-eid');
+    const seg  = wrap.querySelector(`.tl-seg[data-eid="${eid}"]`);
+    if (!seg) return 0;
+    const segTop = parseFloat(seg.style.top) || 0;
+    const segH   = parseFloat(seg.style.height) || 0;
+    return Math.max(0, segTop + segH / 2 - cardHeights[i] / 2);
+  });
+
+  // Forward pass: push cards down to avoid overlap with the card above.
+  let prevBottom = 0;
+  ideals.forEach((ideal, i) => {
+    const top = Math.max(prevBottom, ideal);
+    tops.push(top);
+    prevBottom = top + cardHeights[i] + CARD_GAP;
+  });
+
+  // Backward pass: if cards overflow below the ribbon, pull them back up —
+  // while keeping each card above the one below it.
+  if (ribbonH > 0 && prevBottom > ribbonH) {
+    let ceiling = ribbonH;
+    for (let i = tops.length - 1; i >= 0; i--) {
+      tops[i] = Math.max(0, Math.min(tops[i], ceiling - cardHeights[i]));
+      ceiling = tops[i] - CARD_GAP;
+    }
+  }
+
+  let prevBottom2 = tops.length
+    ? tops[tops.length - 1] + cardHeights[tops.length - 1] + CARD_GAP
+    : 0;
+
+  cards.forEach((card, i) => {
+    card.style.position   = 'absolute';
+    card.style.top        = `${tops[i]}px`;
+    card.style.left       = '0';
+    card.style.right      = '0';
+    card.style.marginBottom = '0';
+  });
+
+  // Expand wrap height only if cards still overflow after packing.
+  wrap.style.minHeight = `${Math.max(ribbonH, prevBottom2)}px`;
+
+  requestAnimationFrame(() => drawTimelineConnectors());
 }
 
 // Draw SVG leader lines from each log card to its to-scale ribbon segment.
@@ -2464,7 +2614,8 @@ function getInsBounds() {
   const M   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   switch (insRange) {
     case 'thisWeek': {
-      const s = new Date(tod); s.setDate(tod.getDate() - tod.getDay());
+      // Week starts Monday: getDay() returns 0=Sun…6=Sat; (day+6)%7 gives 0=Mon…6=Sun
+      const s = new Date(tod); s.setDate(tod.getDate() - ((tod.getDay() + 6) % 7));
       const e = new Date(s);   e.setDate(s.getDate() + 6);
       return { start: s, end: eod(e), label: 'This week' };
     }
@@ -2952,7 +3103,6 @@ function renderInsTimeline(start, end, dataArray) {
     const cap       = isToday ? getNowMins() : 1440;
     const slots     = buildDaySlots(log, cap);
     const barInner  = buildBarHTML(slots, isToday, midnight);
-    const totalMins = log.reduce((s,e) => s + ((e.endMins ?? cap) - e.startMins), 0);
     const nowPct    = isToday ? (getNowMins()/1440*100).toFixed(2) : null;
     const lbl       = isToday ? 'Today'
                     : dayCount <= 14 ? M[d.getMonth()] + ' ' + d.getDate()
@@ -2965,7 +3115,6 @@ function renderInsTimeline(start, end, dataArray) {
       '<div class="ins-tl-bar-wrap">' +
         '<div class="ins-tl-bar" style="height:' + barH + 'px;position:relative;">' + barInner + nowTick + futureShade + '</div>' +
       '</div>' +
-      '<div class="ins-tl-hrs">' + (totalMins > 0 ? minsToDur(totalMins) : '') + '</div>' +
     '</div>';
   }).join('');
 

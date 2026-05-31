@@ -731,8 +731,10 @@
     <div class="sheet-panel">
       <div class="sheet-handle"></div>
       <div class="sheet-title" id="sheetTitle">Edit entry</div>
-      <div class="sheet-cat-label">Category</div>
-      <div class="sheet-cat-grid" id="sheetCatGrid"></div>
+      <div class="sheet-actions">
+        <button class="sheet-btn cancel" onclick="closeEditSheet()">Cancel</button>
+        <button class="sheet-btn save" onclick="saveEdit()">Save</button>
+      </div>
       <div class="sheet-cat-label">Time</div>
       <div class="sheet-times">
         <div class="time-field">
@@ -744,12 +746,10 @@
           <input type="datetime-local" class="datetime-input" id="inputEnd" />
         </div>
       </div>
+      <div class="sheet-cat-label">Category</div>
+      <div class="sheet-cat-grid" id="sheetCatGrid"></div>
       <div class="sheet-error" id="sheetError"></div>
       <button class="sheet-delete" id="sheetDeleteBtn" onclick="deleteEntrySheet()">Delete this entry</button>
-      <div class="sheet-actions">
-        <button class="sheet-btn cancel" onclick="closeEditSheet()">Cancel</button>
-        <button class="sheet-btn save" onclick="saveEdit()">Save</button>
-      </div>
     </div>
   </div>
 </div>

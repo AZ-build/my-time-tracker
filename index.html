@@ -107,20 +107,29 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Retry button (shown on load timeout) */
-    .retry-btn {
-      margin-top: 14px;
-      padding: 10px 24px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 999px;
+    /* Refresh button (shown when no data loaded) */
+    .refresh-btn {
+      display: block;
+      width: calc(100% - 48px);
+      max-width: 340px;
+      margin: 20px auto 0;
+      padding: 18px 0;
+      background: rgba(255,255,255,0.07);
+      border: 1.5px solid rgba(255,255,255,0.14);
+      border-radius: 18px;
       color: var(--text1);
-      font-size: 14px;
-      font-weight: 500;
+      font-size: 17px;
+      font-weight: 600;
+      font-family: inherit;
+      letter-spacing: 0.01em;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
     }
-    .retry-btn:active { background: rgba(255,255,255,0.16); }
+    .refresh-btn:active {
+      background: rgba(255,255,255,0.13);
+      transform: scale(0.97);
+    }
 
     /* ══════════════════════════════════════
        MULTI-DAY BARS
@@ -505,6 +514,11 @@
 
     <div class="multi-day-section" id="multiDaySection"></div>
     <div class="gap-cta" id="gapCta" style="display:none;"></div>
+
+    <div id="noDataBanner" style="display:none; padding: 0 24px 20px;">
+      <button class="refresh-btn" onclick="window.location.reload()">↺ &nbsp;Refresh App</button>
+      <div style="text-align:center; font-size:12px; color:var(--text3); margin-top:10px;">Data didn't load — tap to reconnect</div>
+    </div>
 
     <div class="switch-section">
       <div class="switch-label" id="switchLabel">Start tracking</div>
@@ -948,6 +962,7 @@ let entries      = [];    // all entries from Firestore (sorted by startTime asc
 let currentEntry = null;  // the one entry with endTime === null (actively tracking)
 let loading      = true;
 let loadTimedOut = false;  // true if Firestore didn't respond within the timeout
+let dataFromCache = false; // true if last snapshot came from offline cache (server not yet confirmed)
 let _firestoreUnsub = null; // unsubscribe handle for the active onSnapshot listener
 let editState    = null;
 let viewDate     = new Date();   // date shown in Timeline screen
@@ -994,6 +1009,7 @@ function listenToEntries() {
     .onSnapshot(snapshot => {
       clearTimeout(timeoutId);
       loadTimedOut = false;
+      dataFromCache = snapshot.metadata.fromCache;
       entries = snapshot.docs.map(doc => {
         const d = doc.data();
         return {
@@ -1014,6 +1030,7 @@ function listenToEntries() {
       clearTimeout(timeoutId);
       console.error('Firestore error:', err);
       loadTimedOut = true;
+      dataFromCache = false;
       loading = false;
       renderAll();
     });
@@ -1842,6 +1859,13 @@ function renderNowHero() {
   const switchLabel  = document.getElementById('switchLabel');
   const hero         = document.getElementById('nowHero');
 
+  // Show/hide the no-data refresh banner
+  const noDataBanner = document.getElementById('noDataBanner');
+  if (noDataBanner) {
+    const showBanner = !loading && entries.length === 0 && (dataFromCache || loadTimedOut);
+    noDataBanner.style.display = showBanner ? 'block' : 'none';
+  }
+
   if (loading) {
     iconEl.innerHTML = '<div class="loading-ring"></div>';
     iconEl.style.filter = '';
@@ -1855,22 +1879,6 @@ function renderNowHero() {
     return;
   }
 
-  if (loadTimedOut) {
-    iconEl.innerHTML = `<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>`;
-    iconEl.style.filter = '';
-    iconEl.style.color  = '';
-    nameEl.textContent  = 'Connection timed out';
-    nameEl.style.color  = 'var(--text2)';
-    catEl.innerHTML     = 'Check your signal, then tap Retry<br><button class="retry-btn" onclick="retryConnection()">↺ Retry</button>';
-    catEl.style.color   = 'var(--text3)';
-    catEl.style.opacity = '1';
-    timerEl.innerHTML   = '';
-    pulseDot.style.display     = 'none';
-    startedAtRow.style.display = 'none';
-    stopBtn.style.display      = 'none';
-    hero.style.background      = '';
-    return;
-  }
 
   if (!currentEntry) {
     // ── Idle state ──────────────────────

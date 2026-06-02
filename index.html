@@ -461,6 +461,31 @@
     .datetime-input:focus { outline: none; border-color: rgba(249,115,22,0.5); }
     .datetime-input:disabled { opacity: 0.4; }
 
+    /* ── TIME WHEELS (entry edit sheet) ─────────────────── */
+    .tw-container { display: flex; gap: 10px; margin-bottom: 20px; }
+    .tw-col { flex: 1; background: var(--surface2); border-radius: 14px; padding: 10px 4px 10px; display: flex; flex-direction: column; align-items: center; }
+    .tw-col-label { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); margin-bottom: 2px; }
+    .tw-col-date  { font-size: 11px; color: var(--text3); margin-bottom: 8px; min-height: 14px; }
+    .tw-row { display: flex; align-items: center; gap: 0; position: relative; }
+    .tw-row::before { content:''; position:absolute; inset-x:4px; top:50%; transform:translateY(-50%); height:46px; background:rgba(255,255,255,0.07); border-radius:10px; pointer-events:none; z-index:0; }
+    .tw-drum {
+      height: 138px; /* 3 items × 46px */
+      overflow-y: scroll; scroll-snap-type: y mandatory;
+      -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;
+      position: relative; z-index: 1;
+    }
+    .tw-drum::-webkit-scrollbar { display: none; }
+    .tw-drum-hr   { width: 42px; }
+    .tw-drum-min  { width: 42px; }
+    .tw-drum-ampm { width: 40px; }
+    .tw-drum-pad  { height: 46px; }
+    .tw-drum-item {
+      height: 46px; scroll-snap-align: center;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 700; color: var(--text); user-select: none;
+    }
+    .tw-colon { font-size: 24px; font-weight: 700; color: var(--text); width: 16px; text-align: center; flex-shrink: 0; position: relative; z-index: 1; }
+
     .sheet-error { font-size: 12px; color: #f87171; text-align: center; margin-bottom: 10px; min-height: 16px; }
     .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .sheet-btn { height: 48px; border-radius: 12px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; font-family: inherit; }
@@ -750,14 +775,26 @@
         <button class="sheet-btn save" onclick="saveEdit()">Save</button>
       </div>
       <div class="sheet-cat-label">Time</div>
-      <div class="sheet-times">
-        <div class="time-field">
-          <label>Start</label>
-          <input type="datetime-local" class="datetime-input" id="inputStart" />
+      <div class="tw-container" id="twContainer">
+        <div class="tw-col">
+          <div class="tw-col-label">Start</div>
+          <div class="tw-col-date" id="twStartDate"></div>
+          <div class="tw-row">
+            <div class="tw-drum tw-drum-hr"   id="twStartHr"></div>
+            <div class="tw-colon">:</div>
+            <div class="tw-drum tw-drum-min"  id="twStartMin"></div>
+            <div class="tw-drum tw-drum-ampm" id="twStartAmPm"></div>
+          </div>
         </div>
-        <div class="time-field" id="endTimeField">
-          <label>End</label>
-          <input type="datetime-local" class="datetime-input" id="inputEnd" />
+        <div class="tw-col" id="twEndCol">
+          <div class="tw-col-label">End</div>
+          <div class="tw-col-date" id="twEndDate"></div>
+          <div class="tw-row">
+            <div class="tw-drum tw-drum-hr"   id="twEndHr"></div>
+            <div class="tw-colon">:</div>
+            <div class="tw-drum tw-drum-min"  id="twEndMin"></div>
+            <div class="tw-drum tw-drum-ampm" id="twEndAmPm"></div>
+          </div>
         </div>
       </div>
       <div class="sheet-cat-label">Category</div>
@@ -1240,6 +1277,13 @@ function renderMore() {
       bg: 'rgba(249,115,22,0.18)',
       action: 'openManageActivities()'
     },
+    {
+      label: 'Refresh App',
+      icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`,
+      color: '#22c55e',
+      bg: 'rgba(34,197,94,0.18)',
+      action: 'window.location.reload()'
+    },
   ];
   document.getElementById('moreRows').innerHTML = rows.map(r => `
     <div class="more-row" onclick="${r.action}">
@@ -1669,7 +1713,9 @@ function closeEditActivity() {
 async function saveActivityEdit() {
   const name       = document.getElementById('editActName').value.trim();
   const bannerName = document.getElementById('editActBanner').value.trim();
-  if (!name || !bannerName) { showToast('Name and active label are required'); return; }
+  // bannerName is optional — falls back to name if left blank
+  if (!name) { showToast('Name is required'); return; }
+  const effectiveBanner = bannerName || name;
 
   const type   = _editActType;
   const id     = _editActId;
@@ -1682,7 +1728,7 @@ async function saveActivityEdit() {
   const act = isSub ? findAct(id) : ACTS.find(a => a.id === id);
   if (act) {
     act.name       = name;
-    act.bannerName = bannerName;
+    act.bannerName = effectiveBanner;
     act.color      = color;
     act.bg         = bg;
     if (isSub && _editActEmoji) act.emoji = _editActEmoji;
@@ -1709,7 +1755,7 @@ async function saveActivityEdit() {
   // Persist to Firestore
   if (db) {
     try {
-      const payload = { type, name, bannerName, color, bg, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+      const payload = { type, name, bannerName: effectiveBanner, color, bg, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
       if (!isSub) { payload.hasSub = hasSub; if (hasSub && act?.subKey) payload.subKey = act.subKey; }
       if (isSub && _editActEmoji) payload.emoji = _editActEmoji;
       await db.collection('activity_overrides').doc(id).set(payload, { merge: true });
@@ -1810,6 +1856,7 @@ function renderAll() {
 
 function init() {
   renderMore();
+  initAllDrums();
   if (CONFIGURED) {
     // Load order: custom subs → overrides → activity order → live data
     loadCustomSubs().then(() => {
@@ -2277,8 +2324,8 @@ function renderTimeline() {
 
   const PXPM    = 1.1;   // pixels per minute on the ribbon
   const MIN_SEG = 3;     // tiny entries still get a visible sliver
-  // Visible slots: all entries, plus gaps of >= 5 min.
-  const visSlots  = slots.filter(s => !s.isGap || (s.endMins - s.startMins) >= 5);
+  // Visible slots: all entries, plus gaps of >= 1 min (always show fillable time).
+  const visSlots  = slots.filter(s => !s.isGap || (s.endMins - s.startMins) >= 1);
   const firstStart = visSlots[0].startMins;
   const lastEnd    = visSlots[visSlots.length - 1].endMins ?? cap;
   const ribbonPx   = Math.max(80, (lastEnd - firstStart) * PXPM);
@@ -2527,6 +2574,72 @@ function renderDayDonut(items) {
 // ════════════════════════════════════════════════
 let _addSheetMidnight = null;
 let _sheetPickedActId = null;
+let _sheetStartDay    = null;   // midnight Date for the start day
+let _sheetEndDay      = null;   // midnight Date for the end day
+
+// ── Time Wheel (drum) helpers ─────────────────
+const TW_ITEM_H = 46; // px per item
+const TW_HOURS  = ['12','1','2','3','4','5','6','7','8','9','10','11'];
+const TW_MINS   = Array.from({length:60}, (_,i) => String(i).padStart(2,'0'));
+const TW_AMPM   = ['AM','PM'];
+
+function twBuildDrum(items) {
+  return '<div class="tw-drum-pad"></div>' +
+    items.map(v => `<div class="tw-drum-item">${v}</div>`).join('') +
+    '<div class="tw-drum-pad"></div>';
+}
+
+function initAllDrums() {
+  ['twStartHr','twEndHr'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.innerHTML = twBuildDrum(TW_HOURS);
+  });
+  ['twStartMin','twEndMin'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.innerHTML = twBuildDrum(TW_MINS);
+  });
+  ['twStartAmPm','twEndAmPm'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.innerHTML = twBuildDrum(TW_AMPM);
+  });
+}
+
+function twScrollTo(id, idx) {
+  const el = document.getElementById(id);
+  if (el) el.scrollTop = idx * TW_ITEM_H;
+}
+
+function twReadIdx(id) {
+  const el = document.getElementById(id);
+  return el ? Math.round(el.scrollTop / TW_ITEM_H) : 0;
+}
+
+function twSetTime(prefix, date) {
+  const h   = date.getHours();
+  const m   = date.getMinutes();
+  const h12 = h % 12; // 0 = 12 o'clock, 1-11 = 1-11
+  twScrollTo(prefix + 'Hr',   h12);
+  twScrollTo(prefix + 'Min',  m);
+  twScrollTo(prefix + 'AmPm', h >= 12 ? 1 : 0);
+}
+
+function twReadTime(prefix, baseDay) {
+  const hrIdx   = twReadIdx(prefix + 'Hr');   // 0=12, 1-11
+  const minIdx  = twReadIdx(prefix + 'Min');  // 0-59
+  const ampmIdx = twReadIdx(prefix + 'AmPm'); // 0=AM, 1=PM
+  let h = hrIdx === 0 ? 12 : hrIdx;           // 12 or 1-11
+  if (ampmIdx === 1 && h < 12) h += 12;       // PM: 1-11 → 13-23
+  if (ampmIdx === 0 && h === 12) h = 0;       // 12 AM → 0
+  const d = new Date(baseDay);
+  d.setHours(h, minIdx, 0, 0);
+  return d;
+}
+
+function twDateLabel(date) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yest  = new Date(today); yest.setDate(today.getDate()-1);
+  const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  if (date.getTime() === today.getTime()) return 'Today';
+  if (date.getTime() === yest.getTime())  return 'Yesterday';
+  return M[date.getMonth()] + ' ' + date.getDate();
+}
 
 function openEditSheet(eid, midnightMs) {
   const entry = entries.find(e => e.id === eid);
@@ -2535,16 +2648,24 @@ function openEditSheet(eid, midnightMs) {
   _sheetIsAdd       = false;
   _addSheetMidnight = midnightMs;
 
+  _sheetStartDay = getMidnight(entry.startTime);
+  _sheetEndDay   = entry.endTime ? getMidnight(entry.endTime) : new Date(_sheetStartDay);
+
   document.getElementById('sheetTitle').textContent  = 'Edit entry';
   document.getElementById('sheetDeleteBtn').style.display = 'block';
-  document.getElementById('endTimeField').style.display   = 'block';
+  document.getElementById('twEndCol').style.display   = entry.endTime ? 'flex' : 'none';
   document.getElementById('sheetError').textContent  = '';
-  document.getElementById('inputEnd').disabled        = !entry.endTime;
+  document.getElementById('twStartDate').textContent  = twDateLabel(_sheetStartDay);
+  document.getElementById('twEndDate').textContent    = twDateLabel(_sheetEndDay);
 
   renderSheetCatGrid(entry.actId);
-  document.getElementById('inputStart').value = dateToInputStr(entry.startTime);
-  document.getElementById('inputEnd').value   = entry.endTime ? dateToInputStr(entry.endTime) : '';
   document.getElementById('editOverlay').classList.add('open');
+
+  // Scroll drums AFTER the overlay is visible so scrollTop takes effect
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    twSetTime('twStart', entry.startTime);
+    if (entry.endTime) twSetTime('twEnd', entry.endTime);
+  }));
 }
 
 function openAddSheet(startMins, endMins, midnightMs) {
@@ -2552,17 +2673,26 @@ function openAddSheet(startMins, endMins, midnightMs) {
   _sheetIsAdd       = true;
   _addSheetMidnight = midnightMs;
 
+  const midnight = new Date(midnightMs);
+  _sheetStartDay = new Date(midnight);
+  _sheetEndDay   = new Date(midnight);
+
   document.getElementById('sheetTitle').textContent  = 'Add entry';
   document.getElementById('sheetDeleteBtn').style.display = 'none';
-  document.getElementById('endTimeField').style.display   = 'block';
+  document.getElementById('twEndCol').style.display   = 'flex';
   document.getElementById('sheetError').textContent  = '';
-  document.getElementById('inputEnd').disabled        = false;
+  document.getElementById('twStartDate').textContent  = twDateLabel(_sheetStartDay);
+  document.getElementById('twEndDate').textContent    = twDateLabel(_sheetEndDay);
 
   renderSheetCatGrid(null);
-  const midnight = new Date(midnightMs);
-  document.getElementById('inputStart').value = dateToInputStr(minsToDate(startMins, midnight));
-  document.getElementById('inputEnd').value   = dateToInputStr(minsToDate(endMins,   midnight));
   document.getElementById('editOverlay').classList.add('open');
+
+  const startTime = minsToDate(startMins, midnight);
+  const endTime   = minsToDate(endMins ?? getNowMins(), midnight);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    twSetTime('twStart', startTime);
+    twSetTime('twEnd',   endTime);
+  }));
 }
 
 function renderSheetCatGrid(selectedId) {
@@ -2585,16 +2715,17 @@ function pickSheetCat(id) {
 
 function closeEditSheet() {
   document.getElementById('editOverlay').classList.remove('open');
+  // Always refresh timeline so gap cards stay in sync
+  const tlBtn = document.querySelector('.nav-btn[data-tab="timeline"]');
+  if (tlBtn && tlBtn.classList.contains('active')) renderTimeline();
 }
 
 async function saveEdit() {
   const actId = _sheetPickedActId;
   if (!actId) { document.getElementById('sheetError').textContent = 'Pick a category'; return; }
-  const startVal = document.getElementById('inputStart').value;
-  const endVal   = document.getElementById('inputEnd').value;
-  if (!startVal)  { document.getElementById('sheetError').textContent = 'Start time required'; return; }
-  const startDate = new Date(startVal);
-  const endDate   = endVal ? new Date(endVal) : null;
+  const startDate = twReadTime('twStart', _sheetStartDay);
+  const endColShown = document.getElementById('twEndCol').style.display !== 'none';
+  const endDate = endColShown ? twReadTime('twEnd', _sheetEndDay) : null;
   if (endDate && endDate <= startDate) {
     document.getElementById('sheetError').textContent = 'End must be after start'; return;
   }

@@ -440,7 +440,7 @@
     .overlay { position: fixed; inset: 0; z-index: 300; display: flex; align-items: flex-end; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
     .overlay.open { opacity: 1; pointer-events: all; }
     .overlay-bg { position: absolute; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
-    .sheet-panel { position: relative; width: 100%; max-width: 430px; margin: 0 auto; background: #181b25; border-radius: 24px 24px 0 0; padding: 0 20px calc(env(safe-area-inset-bottom, 16px) + 20px); transform: translateY(100%); transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1); max-height: 90dvh; overflow-y: auto; }
+    .sheet-panel { position: relative; z-index: 1; width: 100%; max-width: 430px; margin: 0 auto; background: #181b25; border-radius: 24px 24px 0 0; padding: 0 20px calc(env(safe-area-inset-bottom, 16px) + 20px); transform: translateY(100%); transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1); max-height: 90dvh; overflow-y: auto; }
     .overlay.open .sheet-panel { transform: translateY(0); }
     .sheet-handle { width: 36px; height: 4px; background: rgba(255,255,255,0.18); border-radius: 2px; margin: 14px auto 18px; }
     .sheet-title  { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 20px; }
@@ -742,7 +742,8 @@
     <div class="overlay-bg" onclick="closeEditActivity()"></div>
     <div class="sheet-panel">
       <div class="sheet-handle"></div>
-      <div class="sheet-title" id="editActTitle">Edit Activity</div>
+      <div style="font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);text-align:center;margin-bottom:6px;">Edit Activity</div>
+      <div id="editActTitle" style="font-size:22px;font-weight:800;text-align:center;margin-bottom:22px;padding:10px 16px;background:var(--surface2);border-radius:12px;">—</div>
       <div class="sheet-cat-label">Name</div>
       <input type="text" id="editActName" placeholder="e.g. Sleep, Cook…"
         style="width:100%;box-sizing:border-box;background:var(--surface2);border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;font-size:15px;color:var(--text);font-family:inherit;margin-bottom:18px;outline:none;" />
@@ -1633,7 +1634,9 @@ function openEditActivity(type, id) {
   _editActEmoji = act.emoji || null;
   _editActColor = act.color || '#f97316';
 
-  document.getElementById('editActTitle').textContent = `Edit "${act.name}"`;
+  const _titleEl = document.getElementById('editActTitle');
+  _titleEl.textContent = act.name;
+  _titleEl.style.color = act.color || '#f97316';
   document.getElementById('editActName').value   = act.name;
   document.getElementById('editActBanner').value = act.bannerName || '';
 
@@ -1750,10 +1753,17 @@ function closeEditActivity() {
 }
 
 async function saveActivityEdit() {
+  const saveBtn = document.querySelector('#editActOverlay .sheet-btn.save');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
+
+  const restoreSaveBtn = () => {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
+  };
+
   const name       = document.getElementById('editActName').value.trim();
   const bannerName = document.getElementById('editActBanner').value.trim();
   // bannerName is optional — falls back to name if left blank
-  if (!name) { showToast('Name is required'); return; }
+  if (!name) { showToast('Name is required'); restoreSaveBtn(); return; }
   const effectiveBanner = bannerName || name;
 
   const type   = _editActType;
@@ -1814,7 +1824,12 @@ async function saveActivityEdit() {
         await batch.commit();
         entries.forEach(e => { if (e.actId === id) { e.color = color; e.name = name; } });
       }
-    } catch(e) { console.warn('Could not save activity override:', e); }
+    } catch(e) {
+      console.warn('Could not save activity override:', e);
+      restoreSaveBtn();
+      showToast('Save failed — please try again');
+      return;
+    }
   }
 
   closeEditActivity();

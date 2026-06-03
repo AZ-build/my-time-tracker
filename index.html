@@ -66,7 +66,7 @@
 
     .now-act-name {
       font-size: 26px; font-weight: 700; letter-spacing: -0.4px;
-      display: flex; align-items: center; gap: 8px; margin-bottom: 2px;
+      display: flex; align-items: center; gap: 8px; margin-bottom: 0;
     }
     .pulse-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--act-color, #f97316); flex-shrink: 0; animation: pulse 2s ease-in-out infinite; }
     @keyframes pulse { 0% { box-shadow: 0 0 0 0 var(--act-glow, rgba(249,115,22,0.5)); } 60% { box-shadow: 0 0 0 8px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
@@ -77,25 +77,28 @@
     .timer-big .tu { font-size: 34px; font-weight: 300; letter-spacing: 0; margin-left: 2px; }
     .now-started { font-size: 12px; color: var(--text2); margin-top: 5px; }
 
-    /* Stop button */
+    /* Name row: contains stop button (absolute-left) + centered name */
+    .now-name-row {
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; margin-bottom: 2px;
+    }
+    /* Stop button — small square, sits to the left of the activity name */
     .stop-btn {
-      display: block;
-      width: 100%;
-      margin-top: 16px;
-      padding: 14px 22px;
+      position: absolute; left: 0;
+      width: 34px; height: 34px;
       background: rgba(248,113,113,0.10);
-      border: 1.5px solid rgba(248,113,113,0.25);
-      border-radius: 14px;
+      border: 1.5px solid rgba(248,113,113,0.22);
+      border-radius: 9px;
       color: #f87171;
-      font-size: 14px;
-      font-weight: 600;
       cursor: pointer;
-      font-family: inherit;
-      letter-spacing: 0.2px;
+      display: none;   /* shown via JS when tracking */
+      align-items: center; justify-content: center;
+      padding: 0;
       transition: background 0.15s;
       box-sizing: border-box;
     }
-    .stop-btn:active { background: rgba(248,113,113,0.22); }
+    .stop-btn:active { background: rgba(248,113,113,0.28); transform: scale(0.93); }
 
     /* Loading ring */
     .loading-ring {
@@ -464,27 +467,52 @@
     /* ── TIME WHEELS (entry edit sheet) ─────────────────── */
     .tw-container { display: flex; gap: 10px; margin-bottom: 20px; }
     .tw-col { flex: 1; background: var(--surface2); border-radius: 14px; padding: 10px 4px 10px; display: flex; flex-direction: column; align-items: center; }
-    .tw-col-label { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); margin-bottom: 2px; }
-    .tw-col-date  { font-size: 11px; color: var(--text3); margin-bottom: 8px; min-height: 14px; }
+    .tw-col-label { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); margin-bottom: 4px; }
+    /* Date label — tappable pill with hidden date input overlay */
+    .tw-col-date {
+      position: relative; font-size: 11px; font-weight: 600;
+      color: rgba(255,255,255,0.45); margin-bottom: 8px;
+      padding: 3px 10px; border-radius: 20px;
+      background: rgba(255,255,255,0.06);
+      cursor: pointer; user-select: none; overflow: hidden;
+    }
+    .tw-col-date:active { background: rgba(255,255,255,0.13); }
+    .tw-col-date input[type="date"] {
+      position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none;
+    }
+    /* Selection band — two hairlines framing the center row */
     .tw-row { display: flex; align-items: center; gap: 0; position: relative; }
-    .tw-row::before { content:''; position:absolute; inset-x:4px; top:50%; transform:translateY(-50%); height:46px; background:rgba(255,255,255,0.07); border-radius:10px; pointer-events:none; z-index:0; }
+    .tw-row::before {
+      content:''; position:absolute; inset-x:2px; top:50%; transform:translateY(-50%);
+      height:46px; background:rgba(255,255,255,0.05);
+      border-top: 1px solid rgba(255,255,255,0.14);
+      border-bottom: 1px solid rgba(255,255,255,0.14);
+      border-radius:10px; pointer-events:none; z-index:0; box-sizing:border-box;
+    }
     .tw-drum {
       height: 138px; /* 3 items × 46px */
       overflow-y: scroll; scroll-snap-type: y mandatory;
       -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;
       position: relative; z-index: 1;
+      /* Fade top and bottom items into the background */
+      -webkit-mask-image: linear-gradient(to bottom,
+        transparent 0%, rgba(0,0,0,0.25) 18%, black 36%, black 64%, rgba(0,0,0,0.25) 82%, transparent 100%);
+      mask-image: linear-gradient(to bottom,
+        transparent 0%, rgba(0,0,0,0.25) 18%, black 36%, black 64%, rgba(0,0,0,0.25) 82%, transparent 100%);
     }
     .tw-drum::-webkit-scrollbar { display: none; }
-    .tw-drum-hr   { width: 42px; }
-    .tw-drum-min  { width: 42px; }
+    .tw-drum-hr   { width: 44px; }
+    .tw-drum-min  { width: 44px; }
     .tw-drum-ampm { width: 40px; }
     .tw-drum-pad  { height: 46px; }
     .tw-drum-item {
       height: 46px; scroll-snap-align: center;
       display: flex; align-items: center; justify-content: center;
-      font-size: 22px; font-weight: 700; color: var(--text); user-select: none;
+      font-size: 20px; font-weight: 600; color: var(--text);
+      user-select: none; opacity: 0.28; transition: opacity 0.12s, font-size 0.12s;
     }
-    .tw-colon { font-size: 24px; font-weight: 700; color: var(--text); width: 16px; text-align: center; flex-shrink: 0; position: relative; z-index: 1; }
+    .tw-drum-item.tw-sel { opacity: 1; font-size: 24px; font-weight: 700; }
+    .tw-colon { font-size: 24px; font-weight: 700; color: rgba(255,255,255,0.5); width: 14px; text-align: center; flex-shrink: 0; position: relative; z-index: 1; }
 
     .sheet-error { font-size: 12px; color: #f87171; text-align: center; margin-bottom: 10px; min-height: 16px; }
     .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -531,7 +559,13 @@
   <div class="screen active" id="s-now">
     <div class="now-hero" id="nowHero">
       <div class="now-icon" id="nowIcon"></div>
-      <div class="now-act-name"><span id="nowName"></span><span class="pulse-dot" id="pulseDot" style="display:none;"></span></div>
+      <!-- Name row: stop button sits to the left, name stays centered -->
+      <div class="now-name-row">
+        <button class="stop-btn" id="stopBtn" onclick="stopTracking()" title="Stop Tracking" style="display:none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2.5"/></svg>
+        </button>
+        <div class="now-act-name"><span id="nowName"></span><span class="pulse-dot" id="pulseDot" style="display:none;"></span></div>
+      </div>
       <div class="now-category" id="nowCategory"></div>
       <div class="timer-big" id="timerDisplay"></div>
       <div class="now-started" id="startedAtRow" style="display:none;">Started at <span id="startedAt">—</span></div>
@@ -551,7 +585,6 @@
 
       <!-- Sub-rows rendered dynamically per hasSub activity -->
       <div id="subRowsContainer"></div>
-      <button class="stop-btn" id="stopBtn" onclick="stopTracking()" style="display:none;">⏹ Stop Tracking</button>
     </div>
   </div>
 
@@ -778,7 +811,10 @@
       <div class="tw-container" id="twContainer">
         <div class="tw-col">
           <div class="tw-col-label">Start</div>
-          <div class="tw-col-date" id="twStartDate"></div>
+          <div class="tw-col-date" id="twStartDate" onclick="twPickDate('start')">
+            <span id="twStartDateText"></span>
+            <input type="date" id="twStartDateInput" onchange="twDateChanged('start',this.value)">
+          </div>
           <div class="tw-row">
             <div class="tw-drum tw-drum-hr"   id="twStartHr"></div>
             <div class="tw-colon">:</div>
@@ -788,7 +824,10 @@
         </div>
         <div class="tw-col" id="twEndCol">
           <div class="tw-col-label">End</div>
-          <div class="tw-col-date" id="twEndDate"></div>
+          <div class="tw-col-date" id="twEndDate" onclick="twPickDate('end')">
+            <span id="twEndDateText"></span>
+            <input type="date" id="twEndDateInput" onchange="twDateChanged('end',this.value)">
+          </div>
           <div class="tw-row">
             <div class="tw-drum tw-drum-hr"   id="twEndHr"></div>
             <div class="tw-colon">:</div>
@@ -1970,7 +2009,7 @@ function renderNowHero() {
 
   document.getElementById('startedAt').textContent = fmtTime(currentEntry.startTime);
   startedAtRow.style.display = '';
-  stopBtn.style.display      = '';
+  stopBtn.style.display      = 'flex';
   switchLabel.textContent    = 'Switch to';
 
   tick();
@@ -2589,16 +2628,65 @@ function twBuildDrum(items) {
     '<div class="tw-drum-pad"></div>';
 }
 
+// Highlight the center item and dim the rest for a given drum
+function twHighlight(drumEl) {
+  if (!drumEl) return;
+  const idx   = Math.round(drumEl.scrollTop / TW_ITEM_H);
+  const items = drumEl.querySelectorAll('.tw-drum-item');
+  items.forEach((item, i) => item.classList.toggle('tw-sel', i === idx));
+}
+
 function initAllDrums() {
-  ['twStartHr','twEndHr'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.innerHTML = twBuildDrum(TW_HOURS);
+  const hrHtml   = twBuildDrum(TW_HOURS);
+  const minHtml  = twBuildDrum(TW_MINS);
+  const ampmHtml = twBuildDrum(TW_AMPM);
+  const allIds = [
+    {id:'twStartHr',   html:hrHtml},   {id:'twEndHr',   html:hrHtml},
+    {id:'twStartMin',  html:minHtml},  {id:'twEndMin',  html:minHtml},
+    {id:'twStartAmPm', html:ampmHtml}, {id:'twEndAmPm', html:ampmHtml},
+  ];
+  allIds.forEach(({id, html}) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = html;
+    // Highlight on scroll
+    el.addEventListener('scroll', () => twHighlight(el), {passive: true});
   });
-  ['twStartMin','twEndMin'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.innerHTML = twBuildDrum(TW_MINS);
-  });
-  ['twStartAmPm','twEndAmPm'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.innerHTML = twBuildDrum(TW_AMPM);
-  });
+}
+
+// Format a day Date → "2026-06-01" for <input type="date">
+function twDayToInputVal(day) {
+  const y = day.getFullYear();
+  const m = String(day.getMonth()+1).padStart(2,'0');
+  const d = String(day.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+
+// Set a date label span + its hidden input together
+function twSetDateLabel(which, day) {
+  const cap = which === 'start' ? 'Start' : 'End';
+  const textEl  = document.getElementById('tw' + cap + 'DateText');
+  const inputEl = document.getElementById('tw' + cap + 'DateInput');
+  if (textEl)  textEl.textContent  = twDateLabel(day);
+  if (inputEl) inputEl.value       = twDayToInputVal(day);
+}
+
+// Open the native date picker — works on desktop (showPicker) and iOS (click)
+function twPickDate(which) {
+  const cap   = which === 'start' ? 'Start' : 'End';
+  const input = document.getElementById('tw' + cap + 'DateInput');
+  if (!input) return;
+  try { input.showPicker(); } catch(e) { input.click(); }
+}
+
+// Called when the date input changes
+function twDateChanged(which, val) {
+  if (!val) return;
+  const [y, mo, d] = val.split('-').map(Number);
+  const newDay = new Date(y, mo-1, d, 0, 0, 0, 0);
+  if (which === 'start') { _sheetStartDay = newDay; }
+  else                   { _sheetEndDay   = newDay; }
+  twSetDateLabel(which, newDay);
 }
 
 function twScrollTo(id, idx) {
@@ -2655,16 +2743,21 @@ function openEditSheet(eid, midnightMs) {
   document.getElementById('sheetDeleteBtn').style.display = 'block';
   document.getElementById('twEndCol').style.display   = entry.endTime ? 'flex' : 'none';
   document.getElementById('sheetError').textContent  = '';
-  document.getElementById('twStartDate').textContent  = twDateLabel(_sheetStartDay);
-  document.getElementById('twEndDate').textContent    = twDateLabel(_sheetEndDay);
+  twSetDateLabel('start', _sheetStartDay);
+  twSetDateLabel('end',   _sheetEndDay);
 
   renderSheetCatGrid(entry.actId);
   document.getElementById('editOverlay').classList.add('open');
 
-  // Scroll drums AFTER the overlay is visible so scrollTop takes effect
+  // Scroll drums AFTER the overlay is visible so scrollTop takes effect, then highlight
   requestAnimationFrame(() => requestAnimationFrame(() => {
     twSetTime('twStart', entry.startTime);
     if (entry.endTime) twSetTime('twEnd', entry.endTime);
+    // Run highlight after scroll settles
+    setTimeout(() => {
+      ['twStartHr','twStartMin','twStartAmPm','twEndHr','twEndMin','twEndAmPm']
+        .forEach(id => twHighlight(document.getElementById(id)));
+    }, 80);
   }));
 }
 
@@ -2681,8 +2774,8 @@ function openAddSheet(startMins, endMins, midnightMs) {
   document.getElementById('sheetDeleteBtn').style.display = 'none';
   document.getElementById('twEndCol').style.display   = 'flex';
   document.getElementById('sheetError').textContent  = '';
-  document.getElementById('twStartDate').textContent  = twDateLabel(_sheetStartDay);
-  document.getElementById('twEndDate').textContent    = twDateLabel(_sheetEndDay);
+  twSetDateLabel('start', _sheetStartDay);
+  twSetDateLabel('end',   _sheetEndDay);
 
   renderSheetCatGrid(null);
   document.getElementById('editOverlay').classList.add('open');
@@ -2692,6 +2785,10 @@ function openAddSheet(startMins, endMins, midnightMs) {
   requestAnimationFrame(() => requestAnimationFrame(() => {
     twSetTime('twStart', startTime);
     twSetTime('twEnd',   endTime);
+    setTimeout(() => {
+      ['twStartHr','twStartMin','twStartAmPm','twEndHr','twEndMin','twEndAmPm']
+        .forEach(id => twHighlight(document.getElementById(id)));
+    }, 80);
   }));
 }
 

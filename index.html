@@ -137,7 +137,16 @@
     /* ══════════════════════════════════════
        MULTI-DAY BARS
     ══════════════════════════════════════ */
-    .multi-day-section { flex-shrink: 0; padding: 10px 20px 0; }
+    .multi-day-section { flex-shrink: 0; padding: 10px 20px 0; position: relative; }
+    .multi-day-section::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 80px;
+      background: linear-gradient(to bottom, transparent 0%, var(--bg) 85%);
+      pointer-events: none;
+      z-index: 1;
+    }
 
     .day-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 
@@ -375,6 +384,20 @@
     .cat-bar-hours { font-size: 13px; color: var(--text2); }
     .cat-bar-track { height: 5px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
     .cat-bar-avg   { font-size: 11px; color: var(--text2); opacity: 0.7; margin-top: 5px; }
+
+    /* ── Typical Day ────────────────────────────── */
+    .typ-day-toggle { display: flex; gap: 6px; padding: 0 20px 8px; }
+    .typ-day-row    { display: flex; gap: 5px; padding: 0 20px 14px; }
+    .typ-day-row .typ-toggle-btn { height: 26px; font-size: 10px; }
+    .typ-toggle-btn { flex: 1; height: 30px; border: 1.5px solid var(--border); border-radius: 8px; background: transparent; color: var(--text3); font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+    .typ-toggle-btn.active { background: rgba(255,255,255,0.1); color: var(--text); border-color: rgba(255,255,255,0.28); }
+    .typ-hour-row { display: flex; align-items: center; gap: 8px; padding: 0 20px; margin-bottom: 3px; }
+    .typ-hour-lbl { width: 34px; font-size: 10px; color: var(--text3); text-align: right; flex-shrink: 0; }
+    .typ-hour-bar { flex: 1; height: 14px; border-radius: 4px; background: var(--surface2); overflow: hidden; display: flex; }
+    .typ-hour-seg { height: 100%; }
+    .typ-day-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 12px 20px 6px; }
+    .typ-leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+    .typ-leg-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
     .cat-bar-fill  { height: 100%; border-radius: 4px; }
     .stat-grid     { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 20px 24px; }
     .stat-card     { background: var(--surface); border-radius: var(--r); padding: 16px; }
@@ -626,17 +649,10 @@
       </div>
     </div>
 
-    <!-- Doughnut + weekly % breakdown -->
+    <!-- Doughnut -->
     <div class="ins-donut-section">
       <div class="donut-chart" id="insDonutChart"></div>
-      <div class="donut-legend" id="insDonutLegend"></div>
-      <div class="cat-expand-row" id="legendExpandRow" style="display:none;">
-        <button class="cat-expand-btn" id="legendExpandBtn" onclick="toggleInsLegend()">Show all categories</button>
-      </div>
     </div>
-    <div class="sec-title" id="insWeeklyTitle" style="padding-top:14px;">By week</div>
-    <div id="insWeeklyBreakdown"></div>
-
     <!-- Category bars -->
     <div class="sec-title" style="padding-top:16px;">By category</div>
     <div class="cat-bars" id="catBars"></div>
@@ -644,13 +660,34 @@
       <button class="cat-expand-btn" id="catExpandBtn" onclick="toggleCatExpand()">Show all categories</button>
     </div>
 
-    <!-- Stats -->
-    <div class="sec-title" style="padding-top:4px;">Stats</div>
-    <div class="stat-list" id="statGrid"></div>
-
     <!-- Daily timeline -->
-    <div class="sec-title" style="padding-top:8px;">Daily breakdown</div>
+    <div class="sec-title" style="padding-top:16px;">Daily breakdown</div>
     <div class="ins-tl-wrap" id="insTimeline"></div>
+
+    <div class="sec-title" id="insWeeklyTitle" style="padding-top:16px;">By week</div>
+    <div id="insWeeklyBreakdown"></div>
+
+    <!-- Typical Day -->
+    <div class="sec-title" style="padding-top:16px;">Typical Day</div>
+    <div class="typ-day-toggle">
+      <button class="typ-toggle-btn active" id="typBtnAll"     onclick="setTypFilter('all')">All days</button>
+      <button class="typ-toggle-btn"        id="typBtnWeekday" onclick="setTypFilter('weekday')">Weekdays</button>
+      <button class="typ-toggle-btn"        id="typBtnWeekend" onclick="setTypFilter('weekend')">Weekends</button>
+    </div>
+    <div class="typ-day-row">
+      <button class="typ-toggle-btn" id="typBtnSun" onclick="setTypFilter('sun')">Sun</button>
+      <button class="typ-toggle-btn" id="typBtnMon" onclick="setTypFilter('mon')">Mon</button>
+      <button class="typ-toggle-btn" id="typBtnTue" onclick="setTypFilter('tue')">Tue</button>
+      <button class="typ-toggle-btn" id="typBtnWed" onclick="setTypFilter('wed')">Wed</button>
+      <button class="typ-toggle-btn" id="typBtnThu" onclick="setTypFilter('thu')">Thu</button>
+      <button class="typ-toggle-btn" id="typBtnFri" onclick="setTypFilter('fri')">Fri</button>
+      <button class="typ-toggle-btn" id="typBtnSat" onclick="setTypFilter('sat')">Sat</button>
+    </div>
+    <div id="typDayGrid"></div>
+
+    <!-- Stats -->
+    <div class="sec-title" style="padding-top:16px;">Stats</div>
+    <div class="stat-list" id="statGrid"></div>
   </div>
 
   <!-- ─── Range Picker Sheet ────────── -->
@@ -1044,13 +1081,14 @@ let dataFromCache = false; // true if last snapshot came from offline cache (ser
 let _firestoreUnsub = null; // unsubscribe handle for the active onSnapshot listener
 let editState    = null;
 let viewDate     = new Date();   // date shown in Timeline screen
-let insRange     = 'last7';      // current insights range type
+let insRange     = 'last30';     // current insights range type
 let insCustomStart = null;       // Date for custom range start
 let insCustomEnd   = null;       // Date for custom range end
 let insEntries   = null;         // null = use live `entries`; populated for long-range queries
 let insToggle        = 'total';  // 'total' or 'avg' — affects category bars & donut legend
 let catExpanded      = false;    // whether to show all cat bars or just top 5
-let insLegendExpanded = false;   // whether to show all legend items in the donut
+let typDayFilter     = 'all';   // 'all' | 'weekday' | 'weekend' | 'sun'..'sat'
+let typPeriod        = null;    // cached period for typ-day re-filter
 let tlDayOffset  = 0;            // 0 = today, -1 = yesterday, etc.
 let _sheetEntryId = null;        // id of entry currently open in the edit sheet
 let _sheetIsAdd   = false;       // true when adding a new entry (not editing)
@@ -2285,7 +2323,7 @@ function renderMultiDayBars() {
   if (!section) return;
   const today    = new Date();
   const days     = [];
-  for (let i = 5; i >= 0; i--) {
+  for (let i = 0; i <= 6; i++) {
     const d = new Date(today); d.setDate(today.getDate() - i);
     days.push(d);
   }
@@ -2294,7 +2332,7 @@ function renderMultiDayBars() {
   const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
   const rows = days.map((d, idx) => {
-    const isToday  = idx === 5;
+    const isToday  = idx === 0;
     const midnight = getMidnight(d);
     const log      = getLogForDay(d);
     const cap      = isToday ? nowM : T;
@@ -2378,7 +2416,7 @@ function renderTimeline() {
     return;
   }
 
-  const PXPM    = 1.1;   // pixels per minute on the ribbon
+  const PXPM    = 0.55;  // pixels per minute on the ribbon
   const MIN_SEG = 3;     // tiny entries still get a visible sliver
   // Visible slots: all entries, plus gaps of >= 1 min (always show fillable time).
   const visSlots  = slots.filter(s => !s.isGap || (s.endMins - s.startMins) >= 1);
@@ -2467,7 +2505,13 @@ function renderTimeline() {
     if (!totals[e.actId]) totals[e.actId] = { color: e.color, name: e.name, mins: 0 };
     totals[e.actId].mins += dur;
   });
-  renderDayDonut(Object.values(totals).sort((a, b) => b.mins - a.mins));
+  const donutItems    = Object.values(totals).sort((a, b) => b.mins - a.mins);
+  const trackedMins   = donutItems.reduce((s, t) => s + t.mins, 0);
+  const untrackedMins = cap - trackedMins;
+  if (untrackedMins > 0) {
+    donutItems.push({ color: 'rgba(255,255,255,0.18)', name: 'Untracked', mins: untrackedMins });
+  }
+  renderDayDonut(donutItems, trackedMins);
 }
 
 // Position each card so its vertical center aligns with its ribbon segment's center.
@@ -2570,10 +2614,11 @@ function drawTimelineConnectors() {
   requestAnimationFrame(() => svg.classList.add('shown'));
 }
 
-function renderDayDonut(items) {
+function renderDayDonut(items, trackedMins) {
   const chartEl  = document.getElementById('donutChart');
   const legendEl = document.getElementById('donutLegend');
   const total    = items.reduce((s, t) => s + t.mins, 0);
+  const tracked  = trackedMins ?? total;
 
   if (total === 0) {
     chartEl.innerHTML  = `<div class="donut-center"><div class="donut-center-lbl">No data yet</div></div>`;
@@ -2602,11 +2647,11 @@ function renderDayDonut(items) {
       ${segs}
     </svg>
     <div class="donut-center">
-      <div class="donut-center-val">${minsToDur(Math.round(total))}</div>
+      <div class="donut-center-val">${minsToDur(Math.round(tracked))}</div>
       <div class="donut-center-lbl">Tracked</div>
     </div>`;
 
-  legendEl.innerHTML = items.map((t, i) => {
+  legendEl.innerHTML = items.filter(t => t.name !== 'Untracked').map((t, i) => {
     const pct = Math.round(t.mins / total * 100);
     return `
       <div class="donut-leg-row" style="animation-delay:${(i * 0.05).toFixed(2)}s;">
@@ -2968,10 +3013,6 @@ function toggleCatExpand() {
   renderInsights();
 }
 
-function toggleInsLegend() {
-  insLegendExpanded = !insLegendExpanded;
-  renderInsights();
-}
 
 function renderInsights() {
   const { start, end, label } = getInsBounds();
@@ -2983,7 +3024,6 @@ function renderInsights() {
 
   if (period.length === 0) {
     document.getElementById('insDonutChart').innerHTML = '<div class="donut-center"><div class="donut-center-lbl">No data yet</div></div>';
-    document.getElementById('insDonutLegend').innerHTML   = '';
     document.getElementById('insWeeklyBreakdown').innerHTML = '';
     document.getElementById('catBars').innerHTML =
       '<div class="empty-state">No data yet for this period.<br>Start tracking and your insights will appear here.</div>';
@@ -3011,6 +3051,7 @@ function renderInsights() {
   renderInsDonut(sorted, totalTracked, uniqueDs);
   renderInsWeeklyBreakdown(period, sorted, start, end);
   renderInsCatBars(sorted, totalTracked, catDays, uniqueDs);
+  renderTypDay(period);
   renderInsStats(period, sorted, totalTracked, uniqueDs, start, end);
   renderInsTimeline(start, end, allData);
 }
@@ -3018,11 +3059,9 @@ function renderInsights() {
 // ── Doughnut for the Insights tab ────────────────
 function renderInsDonut(sorted, totalTracked, uniqueDs) {
   const chartEl  = document.getElementById('insDonutChart');
-  const legendEl = document.getElementById('insDonutLegend');
 
   if (totalTracked === 0) {
-    chartEl.innerHTML  = '<div class="donut-center"><div class="donut-center-lbl">No data yet</div></div>';
-    legendEl.innerHTML = '';
+    chartEl.innerHTML = '<div class="donut-center"><div class="donut-center-lbl">No data yet</div></div>';
     return;
   }
 
@@ -3059,30 +3098,6 @@ function renderInsDonut(sorted, totalTracked, uniqueDs) {
       <div class="donut-center-val">${centerVal}</div>
       <div class="donut-center-lbl">${centerLbl}</div>
     </div>`;
-
-  const MAX_LEG   = 5;
-  const showItems = insLegendExpanded ? items : items.slice(0, MAX_LEG);
-  legendEl.innerHTML = showItems.map((t, i) => {
-    const pct        = Math.round(t.mins / totalTracked * 100);
-    const displayVal = insToggle === 'avg'
-      ? minsToDur(Math.round(t.mins / Math.max(1, uniqueDs))) + '/day'
-      : minsToDur(t.mins);
-    return `<div class="donut-leg-row" style="animation-delay:${(i * 0.05).toFixed(2)}s;">
-      <div class="donut-leg-dot" style="background:${t.color};"></div>
-      <div class="donut-leg-name">${t.name}</div>
-      <div class="donut-leg-dur">${displayVal}</div>
-      <div class="donut-leg-pct">${pct}%</div>
-    </div>`;
-  }).join('');
-
-  const legExpandRow = document.getElementById('legendExpandRow');
-  const legExpandBtn = document.getElementById('legendExpandBtn');
-  if (items.length > MAX_LEG) {
-    legExpandRow.style.display = 'block';
-    legExpandBtn.textContent   = insLegendExpanded ? 'Show less' : `Show all ${items.length} categories`;
-  } else {
-    legExpandRow.style.display = 'none';
-  }
 
   requestAnimationFrame(() => requestAnimationFrame(() => {
     chartEl.querySelectorAll('.donut-seg').forEach(seg => {
@@ -3161,7 +3176,6 @@ function renderInsWeeklyBreakdown(period, sorted, start, end) {
       return `<div class="ins-week-row">
         <div class="ins-week-lbl">${lbl}</div>
         <div class="ins-week-bar-wrap"></div>
-        <div class="ins-week-dur"></div>
       </div>`;
     }
     const segs = topCats.map(([id]) => {
@@ -3177,7 +3191,6 @@ function renderInsWeeklyBreakdown(period, sorted, start, end) {
     return `<div class="ins-week-row">
       <div class="ins-week-lbl">${lbl}</div>
       <div class="ins-week-bar-wrap">${segs}${otherSeg}</div>
-      <div class="ins-week-dur">${minsToDur(tot)}</div>
     </div>`;
   }).join('') + '</div>';
 }
@@ -3238,18 +3251,105 @@ function renderInsCatBars(sorted, totalTracked, catDays, uniqueDs) {
   }
 }
 
+// ── Typical Day heatmap ──────────────────────────
+function setTypFilter(f) {
+  typDayFilter = f;
+  ['all', 'weekday', 'weekend', 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].forEach(k => {
+    const btn = document.getElementById('typBtn' + k.charAt(0).toUpperCase() + k.slice(1));
+    if (btn) btn.classList.toggle('active', k === f);
+  });
+  if (typPeriod) renderTypDay(typPeriod);
+}
+
+const _DOW_MAP = { sun:0, mon:1, tue:2, wed:3, thu:4, fri:5, sat:6 };
+
+function renderTypDay(period) {
+  typPeriod = period;
+  const gridEl = document.getElementById('typDayGrid');
+  if (!gridEl) return;
+
+  const filtered = period.filter(e => {
+    const dow = e.startTime.getDay();
+    if (typDayFilter === 'weekday') return dow >= 1 && dow <= 5;
+    if (typDayFilter === 'weekend') return dow === 0 || dow === 6;
+    if (_DOW_MAP[typDayFilter] !== undefined) return dow === _DOW_MAP[typDayFilter];
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    gridEl.innerHTML = '<div style="padding:12px 20px 16px;font-size:13px;color:var(--text3);">No data for this filter yet.</div>';
+    return;
+  }
+
+  // Accumulate activity-minutes per hour of day
+  const hourData = Array.from({length: 24}, () => ({}));
+  filtered.forEach(e => {
+    const startMs = e.startTime.getTime();
+    const endMs   = (e.endTime ? e.endTime : new Date()).getTime();
+    // Only count hours within the same day as startTime (to avoid multi-day entries skewing)
+    const dayStart = getMidnight(e.startTime).getTime();
+    const dayEnd   = dayStart + 86400000;
+    const eStart   = Math.max(startMs, dayStart);
+    const eEnd     = Math.min(endMs, dayEnd);
+
+    for (let h = 0; h < 24; h++) {
+      const hStart = dayStart + h * 3600000;
+      const hEnd   = hStart + 3600000;
+      const overlap = Math.min(eEnd, hEnd) - Math.max(eStart, hStart);
+      if (overlap > 0) {
+        hourData[h][e.actId] = (hourData[h][e.actId] || 0) + overlap / 60000; // store as mins
+      }
+    }
+  });
+
+  // Collect top activities for legend
+  const actTotals = {};
+  hourData.forEach(h => Object.entries(h).forEach(([id, m]) => {
+    actTotals[id] = (actTotals[id] || 0) + m;
+  }));
+  const topActIds = Object.entries(actTotals).sort((a,b) => b[1]-a[1]).slice(0, 7).map(([id]) => id);
+
+  const hourLabels = ['12a','1a','2a','3a','4a','5a','6a','7a','8a','9a','10a','11a',
+                      '12p','1p','2p','3p','4p','5p','6p','7p','8p','9p','10p','11p'];
+
+  const rows = hourData.map((hMap, h) => {
+    const total = Object.values(hMap).reduce((s, v) => s + v, 0);
+    let barHtml = '';
+    if (total > 0) {
+      barHtml = Object.entries(hMap)
+        .sort((a,b) => b[1]-a[1])
+        .map(([id, mins]) => {
+          const act = findAct(id);
+          const pct = (mins / total * 100).toFixed(1);
+          return `<div class="typ-hour-seg" style="width:${pct}%;background:${act?.color||'#888'};"></div>`;
+        }).join('');
+    }
+    return `<div class="typ-hour-row">
+      <div class="typ-hour-lbl">${hourLabels[h]}</div>
+      <div class="typ-hour-bar">${barHtml}</div>
+    </div>`;
+  }).join('');
+
+  const legend = topActIds.map(id => {
+    const act = findAct(id);
+    return `<div class="typ-leg-item"><div class="typ-leg-dot" style="background:${act?.color||'#888'};"></div>${act?.name||id}</div>`;
+  }).join('');
+
+  gridEl.innerHTML = rows + `<div class="typ-day-legend">${legend}</div>`;
+}
+
 // ── Extended stats list ───────────────────────────
 function renderInsStats(period, sorted, totalTracked, uniqueDs, start, end) {
   const statEl = document.getElementById('statGrid');
 
-  const totalActivities     = period.length;
-  const avgActivitiesPerDay = uniqueDs > 0 ? (totalActivities / uniqueDs).toFixed(1) : '--';
+  // (activity counts removed — not surfaced in stats)
 
   // Sleep stats
   const sleepEntries = period.filter(e => e.actId === 'sleep' || (e.name || '').toLowerCase().includes('sleep'));
   const bedtimeMins  = [];
   const sleepDayMap  = {};
 
+  const wakeupMins = [];
   sleepEntries.forEach(e => {
     const mfm = e.startTime.getHours() * 60 + e.startTime.getMinutes();
     if (mfm >= 1200 || mfm < 240) {
@@ -3259,6 +3359,9 @@ function renderInsStats(period, sorted, totalTracked, uniqueDs, start, end) {
       const dur    = Math.max(0, Math.round((e.endTime - e.startTime) / 60000));
       const dayKey = e.startTime.toDateString();
       sleepDayMap[dayKey] = (sleepDayMap[dayKey] || 0) + dur;
+      // Wake-up = sleep end time between 4 AM and 1 PM
+      const wm = e.endTime.getHours() * 60 + e.endTime.getMinutes();
+      if (wm >= 240 && wm <= 780) wakeupMins.push(wm);
     }
   });
 
@@ -3266,6 +3369,13 @@ function renderInsStats(period, sorted, totalTracked, uniqueDs, start, end) {
   if (bedtimeMins.length > 0) {
     const avg = Math.round(bedtimeMins.reduce((s, v) => s + v, 0) / bedtimeMins.length) % 1440;
     avgBedtime = minsToAmPm(avg);
+  }
+  let avgWakeup = '--';
+  let wakeupSub = 'no sleep data yet';
+  if (wakeupMins.length > 0) {
+    const avg = Math.round(wakeupMins.reduce((s, v) => s + v, 0) / wakeupMins.length);
+    avgWakeup  = minsToAmPm(avg);
+    wakeupSub  = `based on ${wakeupMins.length} morning${wakeupMins.length !== 1 ? 's' : ''}`;
   }
   const sleepDayCount = Object.keys(sleepDayMap).length;
   const avgSleepTime  = sleepDayCount > 0
@@ -3288,43 +3398,39 @@ function renderInsStats(period, sorted, totalTracked, uniqueDs, start, end) {
     ? minsToDur(Math.round(Object.values(workDayMap).reduce((s, v) => s + v, 0) / workDayCount))
     : '--';
 
-  // Longest streak
-  const trackedDates = [...new Set(period.map(e => e.startTime.toDateString()))]
-    .map(s => getMidnight(new Date(s))).sort((a, b) => a - b);
-  let maxStreak = trackedDates.length > 0 ? 1 : 0, curStreak = 1;
-  for (let i = 1; i < trackedDates.length; i++) {
-    if (Math.round((trackedDates[i] - trackedDates[i-1]) / 86400000) === 1) {
-      curStreak++;
-      maxStreak = Math.max(maxStreak, curStreak);
-    } else curStreak = 1;
+  // Avg awake time: 24h minus avg sleep when available; else use tracked window span
+  let avgAwakeTime = '--';
+  let awakeSub     = '';
+  if (sleepDayCount > 0) {
+    const totalSleepMins = Object.values(sleepDayMap).reduce((s, v) => s + v, 0);
+    const avgSleepMins   = Math.round(totalSleepMins / sleepDayCount);
+    avgAwakeTime = minsToDur(Math.max(0, 1440 - avgSleepMins));
+    awakeSub     = `based on ${sleepDayCount} night${sleepDayCount !== 1 ? 's' : ''} of sleep data`;
+  } else {
+    const dayWindows = {};
+    period.forEach(e => {
+      const key    = e.startTime.toDateString();
+      const startM = e.startTime.getHours() * 60 + e.startTime.getMinutes();
+      const endM   = e.endTime ? (e.endTime.getHours() * 60 + e.endTime.getMinutes()) : startM;
+      if (!dayWindows[key]) dayWindows[key] = { min: startM, max: endM };
+      else { dayWindows[key].min = Math.min(dayWindows[key].min, startM); dayWindows[key].max = Math.max(dayWindows[key].max, endM); }
+    });
+    const windows = Object.values(dayWindows);
+    if (windows.length > 0) {
+      avgAwakeTime = minsToDur(Math.round(windows.reduce((s, w) => s + (w.max - w.min), 0) / windows.length));
+      awakeSub     = 'estimated from tracked window (no sleep data)';
+    }
   }
-  const longestStreak = maxStreak > 0 ? maxStreak + (maxStreak === 1 ? ' day' : ' days') : '--';
-
-  // Most active day of week
-  const dowMins  = [0,0,0,0,0,0,0], dowCount = [0,0,0,0,0,0,0];
-  period.forEach(e => {
-    const dow = e.startTime.getDay();
-    const ms  = (e.endTime ? e.endTime.getTime() : Date.now()) - e.startTime.getTime();
-    dowMins[dow]  += Math.max(0, Math.round(ms / 60000));
-    dowCount[dow]++;
-  });
-  const DOW_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const dowAvgs   = dowMins.map((m, i) => dowCount[i] > 0 ? m / dowCount[i] : 0);
-  const bestDow   = dowAvgs.indexOf(Math.max(...dowAvgs));
-  const mostActive = dowCount[bestDow] > 0 ? DOW_NAMES[bestDow] : '--';
 
   const rows = [
-    { lbl: 'Total activities logged',  val: totalActivities.toString() },
-    { lbl: 'Avg activities per day',   val: avgActivitiesPerDay },
+    { lbl: 'Avg wake-up time',         val: avgWakeup,     sub: wakeupSub },
     { lbl: 'Avg bedtime',              val: avgBedtime,
       sub: bedtimeMins.length > 0 ? `based on ${bedtimeMins.length} night${bedtimeMins.length !== 1 ? 's' : ''}` : 'no sleep data yet' },
     { lbl: 'Avg sleep per night',      val: avgSleepTime,
       sub: sleepDayCount > 0 ? `${sleepDayCount} night${sleepDayCount !== 1 ? 's' : ''} tracked` : 'no sleep data yet' },
+    { lbl: 'Avg awake time',           val: avgAwakeTime,  sub: awakeSub || 'no data yet' },
     { lbl: 'Avg work time (weekdays)', val: avgWorkTime,
       sub: workDayCount > 0 ? `${workDayCount} workday${workDayCount !== 1 ? 's' : ''} tracked` : 'no work data yet' },
-    { lbl: 'Longest tracking streak',  val: longestStreak },
-    { lbl: 'Most active day of week',  val: mostActive },
-    { lbl: 'Days active',              val: uniqueDs.toString() },
   ];
 
   statEl.innerHTML = rows.map(r => `
